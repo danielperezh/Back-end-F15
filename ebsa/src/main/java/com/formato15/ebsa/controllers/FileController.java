@@ -10,11 +10,34 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/excel")
 public class FileController {
+
+    // Definir columnas permitidas
+    private static final Set<String> ALLOWED_COLUMNS = new HashSet<>() {{
+        add("Departamento DANE");
+        add("Ciudad DANE");
+        add("Asentamiento");
+        add("Radicado Recibido");
+        add("Fecha y Hora Radicación");
+        add("Tipo trámite");
+        add("Grupo Causal");
+        add("Detalle Causal");
+        add("es>Account Number");
+        add("Número Factura");
+        add("Tipo Respuesta");
+        add("Fecha Respuesta");
+        add("Radicado Respuesta");
+        add("Fecha Notificación");
+        add("Tipo Notificación");
+        add("Fecha Transferencia SSPD");
+    }};
 
     @PostMapping("/upload-merge")
     public ResponseEntity<byte[]> uploadAndMergeExcel(@RequestParam("files") List<MultipartFile> files) throws IOException {
@@ -27,55 +50,73 @@ public class FileController {
 
         // Variables para comparar encabezados
         Row headerRow = null;
-        boolean isFirstFile = true; // Para indicar si estamos en el primer archivo
+        boolean isFirstFile = true;
         int rowCount = 0;
 
         for (MultipartFile file : files) {
             Workbook workbook = new XSSFWorkbook(file.getInputStream());
             Sheet sheet = workbook.getSheetAt(0);
-            boolean skipHeader = false; // Variable para decidir si saltar el encabezado
+            boolean skipHeader = false;
+
+            // Validar las columnas del archivo actual
+            Row currentHeaderRow = sheet.getRow(0);
+            if (!validateColumns(currentHeaderRow)) {
+                workbook.close();
+                String errorMessage = "El archivo contiene columnas no permitidas. Verifique que el archivo contenga solo las columnas requeridas.";
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage.getBytes(StandardCharsets.UTF_8));
+            }
+
+
+            // Buscar el índice de la columna "Número Factura"
+            int facturaColumnIndex = findColumnIndex(currentHeaderRow, "Número Factura");
 
             for (Row row : sheet) {
-                // Si estamos en la primera fila de la primera hoja, consideramos que es el encabezado
                 if (row.getRowNum() == 0) {
                     if (isFirstFile) {
-                        headerRow = row; // Guardamos el encabezado del primer archivo
+                        headerRow = row;
                         isFirstFile = false;
                     } else {
-                        // Si no es el primer archivo, comparamos el encabezado
                         if (areHeadersEqual(headerRow, row)) {
-                            skipHeader = true; // Si son iguales, saltamos este encabezado
+                            skipHeader = true;
                         }
                     }
                 }
 
-                // Si estamos saltando el encabezado, continuamos con los datos
                 if (skipHeader && row.getRowNum() == 0) {
                     continue;
                 }
 
-                // Copiar filas y columnas al archivo combinado
                 Row newRow = mergedSheet.createRow(rowCount++);
                 for (int col = 0; col < row.getLastCellNum(); col++) {
                     Cell oldCell = row.getCell(col);
                     Cell newCell = newRow.createCell(col);
-
+                
                     if (oldCell != null) {
-                        switch (oldCell.getCellType()) {
-                            case STRING:
-                                newCell.setCellValue(oldCell.getStringCellValue());
-                                break;
-                            case NUMERIC:
-                                newCell.setCellValue(oldCell.getNumericCellValue());
-                                break;
-                            case BOOLEAN:
-                                newCell.setCellValue(oldCell.getBooleanCellValue());
-                                break;
-                            default:
-                                newCell.setCellValue("");
+                        if (col == facturaColumnIndex && row.getRowNum() > 0) { // Verificar que no sea la primera fila
+                            // Modificar "Número Factura" a "N" solo en filas debajo del encabezado
+                            newCell.setCellValue("N");
+                        } else {
+                            switch (oldCell.getCellType()) {
+                                case STRING:
+                                    newCell.setCellValue(oldCell.getStringCellValue());
+                                    break;
+                                case NUMERIC:
+                                    newCell.setCellValue(oldCell.getNumericCellValue());
+                                    break;
+                                case BOOLEAN:
+                                    newCell.setCellValue(oldCell.getBooleanCellValue());
+                                    break;
+                                case FORMULA:
+                                    newCell.setCellFormula(oldCell.getCellFormula());
+                                    break;
+                                default:
+                                    newCell.setCellValue(""); // Celda vacía si es de tipo desconocido
+                            }
                         }
                     }
                 }
+                
+                
             }
             workbook.close();
         }
@@ -90,6 +131,36 @@ public class FileController {
         headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=merged.xlsx");
 
         return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+    }
+
+    // Método para validar que solo las columnas permitidas están presentes
+    private boolean validateColumns(Row headerRow) {
+        for (Cell cell : headerRow) {
+            String columnName;
+            if (cell.getCellType() == CellType.STRING) {
+                columnName = cell.getStringCellValue();
+            } else if (cell.getCellType() == CellType.NUMERIC) {
+                columnName = String.valueOf((int) cell.getNumericCellValue()); // Convierte el valor numérico a String
+            } else {
+                continue; // O ignora celdas que no sean de tipo STRING o NUMERIC
+            }
+
+            if (!ALLOWED_COLUMNS.contains(columnName)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    // Método para encontrar el índice de una columna por su nombre
+    private int findColumnIndex(Row headerRow, String columnName) {
+        for (Cell cell : headerRow) {
+            if (columnName.equals(cell.getStringCellValue())) {
+                return cell.getColumnIndex();
+            }
+        }
+        return -1;
     }
 
     // Método para comparar si los encabezados son iguales
