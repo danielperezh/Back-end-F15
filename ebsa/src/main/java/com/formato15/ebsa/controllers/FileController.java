@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,13 +64,11 @@ public class FileController {
     ));
 
 
-    @PostMapping("/upload-merge")
+    @PostMapping("/validation")
     public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file) {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             
-  
-
             // Validar encabezado del archivo
             Row headerRow = sheet.getRow(0);
             if (!validateColumns(headerRow)) {
@@ -165,6 +162,37 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al procesar el archivo: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/preview")
+    public ResponseEntity<List<Map<String, String>>> previewExcel(@RequestParam("file") MultipartFile file) {
+        List<Map<String, String>> rows = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Validate header row
+            Row headerRow = sheet.getRow(0);
+            if (!validateColumns(headerRow)) {
+                return ResponseEntity.badRequest().body(Collections.singletonList(Map.of("error", "El archivo contiene columnas no permitidas. Verifique que el archivo contenga solo las columnas requeridas.")));
+            }
+
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue; // Skip header row
+
+                Map<String, String> rowData = new LinkedHashMap<>();
+                for (Cell cell : row) {
+                    String columnName = headerRow.getCell(cell.getColumnIndex()).getStringCellValue();
+                    rowData.put(columnName, getCellStringValue(cell));
+                }
+                rows.add(rowData);
+            }
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonList(Map.of("error", "Error al procesar el archivo: " + e.getMessage())));
+        }
+
+        return ResponseEntity.ok(rows);
     }
 
     // Método para validar que solo las columnas permitidas están presentes
