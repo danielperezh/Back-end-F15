@@ -3,6 +3,7 @@ package com.formato15.ebsa.controllers;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -10,10 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.formato15.ebsa.service.DataService;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+
 
 @RestController
 @RequestMapping("/api/excel")
@@ -226,9 +231,16 @@ public class FileController {
         return ResponseEntity.ok(rows);
     }
 
+    @Autowired
+    private DataService dataService;
+
     // Método para guardar datos editados
     @PostMapping("/saveFile")
     public ResponseEntity<byte[]> saveFile(@RequestBody List<Map<String, String>> editedData) {
+
+        // Guardar datos en la base de datos
+        dataService.saveData(editedData);
+
         // Guardar los datos temporalmente para la validación posterior
         this.savedData = new ArrayList<>(editedData);
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -342,7 +354,7 @@ public class FileController {
                 if (fechaRespuesta != null && fechaNotificacion != null) {
                     if (fechaNotificacion.before(fechaRespuesta)) {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body("La fecha de notificación en los datos guardados debe ser mayor o igual a la fecha y hora de respuesta.");
+                                .body("La fecha de notificación en los datos guardados debe ser mayor o igual a la fecha de respuesta.");
                     }
                 }
             } catch (ParseException e) {
