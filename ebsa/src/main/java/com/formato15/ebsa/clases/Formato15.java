@@ -1,13 +1,15 @@
 package com.formato15.ebsa.clases;
 
-import javax.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
 
 @Entity
 @Table(name = "Formato_15") // Nombre de la tabla en la base de datos
 public class Formato15 {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String departamentoDANE;
