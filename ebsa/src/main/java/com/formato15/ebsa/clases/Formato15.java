@@ -1,6 +1,9 @@
 package com.formato15.ebsa.clases;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 
@@ -9,29 +12,57 @@ import jakarta.persistence.Id;
 public class Formato15 {
 
     @Id
-    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String departamentoDANE;
-    private String ciudadDANE;
+    @Column(name="departamento_dane")
+    private String departamentoDane;
+
+    @Column(name="ciudad_dane")
+    private String ciudadDane;
+
+    @Column(name="asentamiento")
     private String asentamiento;
+
+    @Column(name="radicado_recibido")
     private String radicadoRecibido;
     //@Temporal(TemporalType.TIMESTAMP)
+    @Column(name="fecha_hora_radicacion")
     private String fechaHoraRadicacion;
+
+    @Column(name="tipo_tramite")
     private String tipoTramite;
+
+    @Column(name="grupo_causal")
     private String grupoCausal;
+
+    @Column(name="detalle_causal")
     private String detalleCausal;
-    private String accountNumber;
+
+    @Column(name="numero_cuenta")
+    private String numeroCuenta;
+
+    @Column(name="numero_factura")
     private String numeroFactura;
+
+    @Column(name="tipo_respuesta")
     private String tipoRespuesta;
     //@Temporal(TemporalType.TIMESTAMP)
+    @Column(name="fecha_respuesta")
     private String fechaRespuesta;
+
+    @Column(name="radicado_respuesta")
     private String radicadoRespuesta;
     //@Temporal(TemporalType.TIMESTAMP)
+    @Column(name="fecha_notificacion")
     private String fechaNotificacion;
+
+    @Column(name="tipo_notificacion")
     private String tipoNotificacion;
     //@Temporal(TemporalType.TIMESTAMP)
-    private String fechaTransferenciaSSPD;
+
+    @Column(name="fecha_transferencia_sspd")
+    private String fechaTransferenciaSspd;
     
     public Long getId() {
         return id;
@@ -39,17 +70,17 @@ public class Formato15 {
     public void setId(Long id) {
         this.id = id;
     }
-    public String getDepartamentoDANE() {
-        return departamentoDANE;
+    public String getDepartamentoDane() {
+        return departamentoDane;
     }
-    public void setDepartamentoDANE(String departamentoDANE) {
-        this.departamentoDANE = departamentoDANE;
+    public void setDepartamentoDane(String departamentoDane) {
+        this.departamentoDane = departamentoDane;
     }
-    public String getCiudadDANE() {
-        return ciudadDANE;
+    public String getCiudadDane() {
+        return ciudadDane;
     }
-    public void setCiudadDANE(String ciudadDANE) {
-        this.ciudadDANE = ciudadDANE;
+    public void setCiudadDane(String ciudadDane) {
+        this.ciudadDane = ciudadDane;
     }
     public String getAsentamiento() {
         return asentamiento;
@@ -87,12 +118,7 @@ public class Formato15 {
     public void setDetalleCausal(String detalleCausal) {
         this.detalleCausal = detalleCausal;
     }
-    public String getAccountNumber() {
-        return accountNumber;
-    }
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
-    }
+    
     public String getNumeroFactura() {
         return numeroFactura;
     }
@@ -129,11 +155,17 @@ public class Formato15 {
     public void setTipoNotificacion(String tipoNotificacion) {
         this.tipoNotificacion = tipoNotificacion;
     }
-    public String getFechaTransferenciaSSPD() {
-        return fechaTransferenciaSSPD;
+    public String getFechaTransferenciaSspd() {
+        return fechaTransferenciaSspd;
     }
-    public void setFechaTransferenciaSSPD(String fechaTransferenciaSSPD) {
-        this.fechaTransferenciaSSPD = fechaTransferenciaSSPD;
+    public void setFechaTransferenciaSspd(String fechaTransferenciaSspd) {
+        this.fechaTransferenciaSspd = fechaTransferenciaSspd;
+    }
+    public String getNumeroCuenta() {
+        return numeroCuenta;
+    }
+    public void setNumeroCuenta(String numeroCuenta) {
+        this.numeroCuenta = numeroCuenta;
     }
 
     // Getters y Setters
