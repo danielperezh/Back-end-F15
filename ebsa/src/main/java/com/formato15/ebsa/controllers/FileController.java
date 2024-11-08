@@ -231,15 +231,9 @@ public class FileController {
         return ResponseEntity.ok(rows);
     }
 
-    @Autowired
-    private DataService dataService;
-
     // Método para guardar datos editados
     @PostMapping("/saveFile")
     public ResponseEntity<byte[]> saveFile(@RequestBody List<Map<String, String>> editedData) {
-
-        // Guardar datos en la base de datos
-        dataService.saveData(editedData);
 
         // Guardar los datos temporalmente para la validación posterior
         this.savedData = new ArrayList<>(editedData);
@@ -282,6 +276,9 @@ public class FileController {
                     .body(null);
         }
     }
+
+    @Autowired
+    private DataService dataService;
 
     // Método para validar datos editados
     @PostMapping("/validateEditedData")
@@ -362,6 +359,8 @@ public class FileController {
                         .body("Error al analizar las fechas en los datos guardados. Asegúrese de que el formato de fecha sea correcto.");
             }
         }
+        // Guardar datos en la base de datos
+        dataService.saveData(savedData); // posiblemente no envie la informacion guardada, si es asi con el voton de guardar agregar la validacion de los campos.
 
         // Si pasa todas las validaciones
         return ResponseEntity.ok("Los datos guardados han sido validados exitosamente.");

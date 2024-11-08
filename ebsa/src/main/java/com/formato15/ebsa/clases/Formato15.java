@@ -15,14 +15,17 @@ public class Formato15 {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="departamento_dane")
-    private String departamentoDane;
+    @Column(name = "departamento_dane")
+    private Integer departamentoDane;
 
-    @Column(name="ciudad_dane")
-    private String ciudadDane;
+    @Column(name = "ciudad_dane")
+    private Integer ciudadDane;
 
-    @Column(name="asentamiento")
+    @Column(name = "asentamiento")
     private String asentamiento;
+
+    @Column(name="codigo_dane")
+    private String codigoDane;
 
     @Column(name="radicado_recibido")
     private String radicadoRecibido;
@@ -63,23 +66,24 @@ public class Formato15 {
 
     @Column(name="fecha_transferencia_sspd")
     private String fechaTransferenciaSspd;
-    
+
+    // Getters y Setters
     public Long getId() {
         return id;
     }
     public void setId(Long id) {
         this.id = id;
     }
-    public String getDepartamentoDane() {
+    public Integer getDepartamentoDane() {
         return departamentoDane;
     }
-    public void setDepartamentoDane(String departamentoDane) {
+    public void setDepartamentoDane(Integer departamentoDane) {
         this.departamentoDane = departamentoDane;
     }
-    public String getCiudadDane() {
+    public Integer getCiudadDane() {
         return ciudadDane;
     }
-    public void setCiudadDane(String ciudadDane) {
+    public void setCiudadDane(Integer ciudadDane) {
         this.ciudadDane = ciudadDane;
     }
     public String getAsentamiento() {
@@ -88,6 +92,7 @@ public class Formato15 {
     public void setAsentamiento(String asentamiento) {
         this.asentamiento = asentamiento;
     }
+    
     public String getRadicadoRecibido() {
         return radicadoRecibido;
     }
@@ -167,7 +172,12 @@ public class Formato15 {
     public void setNumeroCuenta(String numeroCuenta) {
         this.numeroCuenta = numeroCuenta;
     }
+    public String getCodigoDane() {
+        return codigoDane;
+    }
+    public void setCodigoDane(String codigoDane) {
+        this.codigoDane = codigoDane;
+    }
 
-    // Getters y Setters
     
 }

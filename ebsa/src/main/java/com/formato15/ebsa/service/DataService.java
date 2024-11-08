@@ -19,9 +19,14 @@ public class DataService {
         for (Map<String, String> rowData : data) {
             Formato15 dataEntity = new Formato15();
             try {
-                dataEntity.setDepartamentoDane(rowData.get("Departamento DANE"));
-                dataEntity.setCiudadDane(rowData.get("Ciudad DANE"));
-                dataEntity.setAsentamiento(rowData.get("Asentamiento"));
+                // dataEntity.setDepartamentoDane(rowData.get("Departamento DANE"));
+                // dataEntity.setCiudadDane(rowData.get("Ciudad DANE"));
+                // dataEntity.setAsentamiento(rowData.get("Asentamiento"));
+                int departamentoDane = Integer.parseInt(rowData.get("Departamento DANE"));
+                int ciudadDane = Integer.parseInt(rowData.get("Ciudad DANE"));
+                String asentamiento = String.valueOf(rowData.get("Asentamiento"));
+                String ubicacion = String.valueOf(departamentoDane) + String.valueOf(ciudadDane) + String.valueOf(asentamiento); // cambiar a entero
+                dataEntity.setCodigoDane(ubicacion);
                 dataEntity.setRadicadoRecibido(rowData.get("Radicado Recibido"));
                 dataEntity.setFechaHoraRadicacion(rowData.get("Fecha y Hora Radicación"));
                 dataEntity.setTipoTramite(rowData.get("Tipo trámite"));
@@ -35,7 +40,7 @@ public class DataService {
                 dataEntity.setFechaNotificacion(rowData.get("Fecha Notificación"));
                 dataEntity.setTipoNotificacion(rowData.get("Tipo Notificación"));
                 dataEntity.setFechaTransferenciaSspd(rowData.get("Fecha Transferencia SSPD"));
-                // Completa el resto de los campos
+                
                 dataRepository.save(dataEntity);
             } catch (Exception e) {
                 // Manejar la excepción (por ejemplo, registrarla o devolver un error)
