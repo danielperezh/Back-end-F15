@@ -23,7 +23,7 @@ public class DataService {
                 // dataEntity.setCiudadDane(rowData.get("Ciudad DANE"));
                 // dataEntity.setAsentamiento(rowData.get("Asentamiento"));
                 int departamentoDane = Integer.parseInt(rowData.get("Departamento DANE"));
-                int ciudadDane = Integer.parseInt(rowData.get("Ciudad DANE"));
+                String ciudadDane = String.valueOf(rowData.get("Ciudad DANE"));
                 String asentamiento = String.valueOf(rowData.get("Asentamiento"));
                 String ubicacion = String.valueOf(departamentoDane) + String.valueOf(ciudadDane) + String.valueOf(asentamiento); // cambiar a entero
                 dataEntity.setCodigoDane(ubicacion);

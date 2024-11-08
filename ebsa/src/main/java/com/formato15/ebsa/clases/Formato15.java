@@ -19,7 +19,7 @@ public class Formato15 {
     private Integer departamentoDane;
 
     @Column(name = "ciudad_dane")
-    private Integer ciudadDane;
+    private String ciudadDane;
 
     @Column(name = "asentamiento")
     private String asentamiento;
@@ -80,10 +80,10 @@ public class Formato15 {
     public void setDepartamentoDane(Integer departamentoDane) {
         this.departamentoDane = departamentoDane;
     }
-    public Integer getCiudadDane() {
+    public String getCiudadDane() {
         return ciudadDane;
     }
-    public void setCiudadDane(Integer ciudadDane) {
+    public void setCiudadDane(String ciudadDane) {
         this.ciudadDane = ciudadDane;
     }
     public String getAsentamiento() {

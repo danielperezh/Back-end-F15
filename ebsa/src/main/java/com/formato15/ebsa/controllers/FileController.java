@@ -280,8 +280,8 @@ public class FileController {
     @Autowired
     private DataService dataService;
 
-    // Método para validar datos editados
-    @PostMapping("/validateEditedData")
+    // Método para validar datos editados 
+    @PostMapping("/validateEditedData") //Intentar que este boton valide y guarde los cambios realizados en la vista
     public ResponseEntity<String> validateEditedData() {
         if (savedData.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -334,10 +334,12 @@ public class FileController {
                 String fechaRadicacionStr = rowData.get("Fecha y Hora Radicación");
                 String fechaRespuestaStr = rowData.get("Fecha Respuesta");
                 String fechaNotificacionStr = rowData.get("Fecha Notificación");
+                // String fechaTransferenciaSsdpStr = rowData.get("Fecha Transferencia SSPD");
 
                 Date fechaRadicacion = fechaRadicacionStr != null ? parseDate(fechaRadicacionStr) : null;
                 Date fechaRespuesta = fechaRespuestaStr != null ? parseDate(fechaRespuestaStr) : null;
                 Date fechaNotificacion = fechaNotificacionStr != null ? parseDate(fechaNotificacionStr) : null;
+                // Date fechaTransferenciaSsdp = fechaTransferenciaSsdpStr != null ? parseDate(fechaTransferenciaSsdpStr) : null;
 
                 // Validar que Fecha Respuesta sea mayor o igual a Fecha Radicación
                 if (fechaRadicacion != null && fechaRespuesta != null) {
@@ -363,7 +365,7 @@ public class FileController {
         dataService.saveData(savedData); // posiblemente no envie la informacion guardada, si es asi con el voton de guardar agregar la validacion de los campos.
 
         // Si pasa todas las validaciones
-        return ResponseEntity.ok("Los datos guardados han sido validados exitosamente.");
+        return ResponseEntity.ok("Los datos han sido validados exitosamente y enviados a SIEC.");
     }
 
     // Método auxiliar para convertir una cadena de texto a un objeto Date
@@ -425,10 +427,10 @@ public class FileController {
         return "";
     }
 
-    private Date getDateFromCell(Cell cell) {
-        if (cell != null && cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-            return cell.getDateCellValue();
-        }
-        return null;
-    }
+    // private Date getDateFromCell(Cell cell) {
+    //     if (cell != null && cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+    //         return cell.getDateCellValue();
+    //     }
+    //     return null;
+    // }
 }
