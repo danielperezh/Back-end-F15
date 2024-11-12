@@ -1,5 +1,7 @@
 package com.formato15.ebsa.clases;
 
+import java.sql.Timestamp;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,11 +10,13 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 
 @Entity
-@Table(name = "Formato_15") // Nombre de la tabla en la base de datos
+@Table(name = "Formato_15") 
 public class Formato15 {
 
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "departamento_dane")
@@ -24,47 +28,48 @@ public class Formato15 {
     @Column(name = "asentamiento")
     private String asentamiento;
 
-    @Column(name="codigo_dane")
+    @Column(name="codigo_dane") //codigo_dane
     private String codigoDane;
 
-    @Column(name="radicado_recibido")
+    //@Id
+    @Column(name="radicado_recibido") //radicado_recibido
     private String radicadoRecibido;
     //@Temporal(TemporalType.TIMESTAMP)
-    @Column(name="fecha_hora_radicacion")
-    private String fechaHoraRadicacion;
+    @Column(name="FECHA_RECLAMACION") // fecha_reclamacion
+    private Timestamp  fechaHoraRadicacion;
 
-    @Column(name="tipo_tramite")
+    @Column(name="tipo_tramite") // tipo_tramite
     private String tipoTramite;
 
-    @Column(name="grupo_causal")
+    @Column(name="grupo_causal") // grupo_causal
     private String grupoCausal;
 
-    @Column(name="detalle_causal")
+    @Column(name="detalle_causal") //detalle_causal
     private String detalleCausal;
 
-    @Column(name="numero_cuenta")
+    @Column(name="numero_cuenta") //niu
     private String numeroCuenta;
 
-    @Column(name="numero_factura")
+    @Column(name="numero_factura") // id_factura
     private String numeroFactura;
 
-    @Column(name="tipo_respuesta")
+    @Column(name="tipo_respuesta") // tipo_respuesta
     private String tipoRespuesta;
     //@Temporal(TemporalType.TIMESTAMP)
-    @Column(name="fecha_respuesta")
+    @Column(name="fecha_respuesta") // fecha_respuesta
     private String fechaRespuesta;
-
-    @Column(name="radicado_respuesta")
+ 
+    @Column(name="radicado_respuesta") // radicado_respuesta 
     private String radicadoRespuesta;
     //@Temporal(TemporalType.TIMESTAMP)
-    @Column(name="fecha_notificacion")
+    @Column(name="fecha_notificacion") // fecha_notificacion
     private String fechaNotificacion;
-
-    @Column(name="tipo_notificacion")
+ 
+    @Column(name="tipo_notificacion") // tipo_notificacion
     private String tipoNotificacion;
     //@Temporal(TemporalType.TIMESTAMP)
 
-    @Column(name="fecha_transferencia_sspd")
+    @Column(name="fecha_transferencia_sspd") // fecha_traslado_sspd
     private String fechaTransferenciaSspd;
 
     // Getters y Setters
@@ -99,10 +104,10 @@ public class Formato15 {
     public void setRadicadoRecibido(String radicadoRecibido) {
         this.radicadoRecibido = radicadoRecibido;
     }
-    public String getFechaHoraRadicacion() {
+    public Timestamp  getFechaHoraRadicacion() {
         return fechaHoraRadicacion;
     }
-    public void setFechaHoraRadicacion(String fechaHoraRadicacion) {
+    public void setFechaHoraRadicacion(Timestamp  fechaHoraRadicacion) {
         this.fechaHoraRadicacion = fechaHoraRadicacion;
     }
     public String getTipoTramite() {

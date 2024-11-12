@@ -283,10 +283,10 @@ public class FileController {
     // Método para validar datos editados 
     @PostMapping("/validateEditedData") //Intentar que este boton valide y guarde los cambios realizados en la vista
     public ResponseEntity<String> validateEditedData() {
-        if (savedData.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("No hay datos guardados para validar.");
-        }
+        // if (savedData.isEmpty()) {
+        //     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        //             .body("No hay datos guardados para validar.");
+        // }
 
         for (Map<String, String> rowData : savedData) {
             String departamentoDANEValue = rowData.get("Departamento DANE");
@@ -362,7 +362,7 @@ public class FileController {
             }
         }
         // Guardar datos en la base de datos
-        dataService.saveData(savedData); // posiblemente no envie la informacion guardada, si es asi con el voton de guardar agregar la validacion de los campos.
+        //dataService.saveData(savedData); // posiblemente no envie la informacion guardada, si es asi con el voton de guardar agregar la validacion de los campos.
 
         // Si pasa todas las validaciones
         return ResponseEntity.ok("Los datos han sido validados exitosamente y enviados a SIEC.");

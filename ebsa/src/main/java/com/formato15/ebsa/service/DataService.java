@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import com.formato15.ebsa.clases.Formato15;
 import com.formato15.ebsa.repository.DataRepository;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +31,15 @@ public class DataService {
                 String ubicacion = String.valueOf(departamentoDane) + String.valueOf(ciudadDane) + String.valueOf(asentamiento); // cambiar a entero
                 dataEntity.setCodigoDane(ubicacion);
                 dataEntity.setRadicadoRecibido(rowData.get("Radicado Recibido"));
-                dataEntity.setFechaHoraRadicacion(rowData.get("Fecha y Hora Radicación"));
+                // dataEntity.setFechaHoraRadicacion(rowData.get("Fecha y Hora Radicación"));
+                dataEntity.setFechaHoraRadicacion(
+                    Timestamp.valueOf(
+                        LocalDateTime.parse(
+                            rowData.get("Fecha y Hora Radicación"),
+                            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+                        )
+                    )
+                );
                 dataEntity.setTipoTramite(rowData.get("Tipo trámite"));
                 dataEntity.setGrupoCausal(rowData.get("Grupo Causal"));
                 dataEntity.setDetalleCausal(rowData.get("Detalle Causal"));
