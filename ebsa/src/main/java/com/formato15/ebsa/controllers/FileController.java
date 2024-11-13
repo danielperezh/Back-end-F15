@@ -231,63 +231,154 @@ public class FileController {
         return ResponseEntity.ok(rows);
     }
 
-    // Método para guardar datos editados
-    @PostMapping("/saveFile")
-    public ResponseEntity<byte[]> saveFile(@RequestBody List<Map<String, String>> editedData) {
+    // // Método para guardar datos editados
+    // @PostMapping("/saveFile")
+    // public ResponseEntity<byte[]> saveFile(@RequestBody List<Map<String, String>> editedData) {
 
-        // Guardar los datos temporalmente para la validación posterior
-        this.savedData = new ArrayList<>(editedData);
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Hoja1");
+    //     // Guardar los datos temporalmente para la validación posterior
+    //     this.savedData = new ArrayList<>(editedData);
+    //     try (Workbook workbook = new XSSFWorkbook()) {
+    //         Sheet sheet = workbook.createSheet("Hoja1");
 
-            // Crear encabezados en la primera fila
-            Row headerRow = sheet.createRow(0);
-            Map<String, String> firstRow = editedData.get(0);
-            int cellIndex = 0;
-            for (String key : firstRow.keySet()) {
-                Cell cell = headerRow.createCell(cellIndex++);
-                cell.setCellValue(key);
-            }
+    //         // Crear encabezados en la primera fila
+    //         Row headerRow = sheet.createRow(0);
+    //         Map<String, String> firstRow = editedData.get(0);
+    //         int cellIndex = 0;
+    //         for (String key : firstRow.keySet()) {
+    //             Cell cell = headerRow.createCell(cellIndex++);
+    //             cell.setCellValue(key);
+    //         }
 
-            // Llenar filas con datos editados
-            int rowIndex = 1;
-            for (Map<String, String> rowData : editedData) {
-                Row row = sheet.createRow(rowIndex++);
-                cellIndex = 0;
-                for (String value : rowData.values()) {
-                    Cell cell = row.createCell(cellIndex++);
-                    cell.setCellValue(value);
-                }
-            }
+    //         // Llenar filas con datos editados
+    //         int rowIndex = 1;
+    //         for (Map<String, String> rowData : editedData) {
+    //             Row row = sheet.createRow(rowIndex++);
+    //             cellIndex = 0;
+    //             for (String value : rowData.values()) {
+    //                 Cell cell = row.createCell(cellIndex++);
+    //                 cell.setCellValue(value);
+    //             }
+    //         }
 
-            // Convertir archivo a bytes para la descarga
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            workbook.write(outputStream);
-            byte[] fileBytes = outputStream.toByteArray();
+    //         // Convertir archivo a bytes para la descarga
+    //         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    //         workbook.write(outputStream);
+    //         byte[] fileBytes = outputStream.toByteArray();
 
-            // Configurar encabezado para la descarga
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentDispositionFormData("attachment", "Formato15.xlsx");
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+    //         // Configurar encabezado para la descarga
+    //         HttpHeaders headers = new HttpHeaders();
+    //         headers.setContentDispositionFormData("attachment", "Formato15.xlsx");
+    //         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 
-            return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
-        }
-    }
+    //         return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+    //     } catch (IOException e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(null);
+    //     }
+    // }
+
+    // @Autowired
+    // private DataService dataService;
+
+    // // Método para validar datos editados 
+    // @PostMapping("/validateEditedData") //Intentar que este boton valide y guarde los cambios realizados en la vista
+    // public ResponseEntity<String> validateEditedData() {
+    //     // if (savedData.isEmpty()) {
+    //     //     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //     //             .body("No hay datos guardados para validar.");
+    //     // }
+
+    //     for (Map<String, String> rowData : savedData) {
+    //         String departamentoDANEValue = rowData.get("Departamento DANE");
+    //         String ciudadDANEValue = rowData.get("Ciudad DANE");
+    //         String grupoCausal = rowData.get("Grupo Causal");
+    //         String detalleCausalStr = rowData.get("Detalle Causal");
+
+    //         // Validar Departamento y Ciudad
+    //         if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
+    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                     .body("El código del departamento no puede ser nulo o igual a 0.");
+    //         }
+    //         if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
+    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                     .body(String.format("El código de ciudad %s no es válido para el departamento 15.",
+    //                             ciudadDANEValue));
+    //         } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
+    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                     .body(String.format("El código de ciudad %s no es válido para el departamento 68.",
+    //                             ciudadDANEValue));
+    //         }
+
+    //         // Validar que el grupo causal corresponda con los códigos asignados por detalle causal
+    //         try {
+    //             Integer detalleCausal = Integer.parseInt(detalleCausalStr);
+
+    //             if ("P".equalsIgnoreCase(grupoCausal)) {
+    //                 if (!CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
+    //                 }
+    //             } else if ("F".equalsIgnoreCase(grupoCausal)) {
+    //                 if (!CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
+    //                 }
+    //             }
+    //         } catch (NumberFormatException e) {
+    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                     .body("Error: El valor de Detalle Causal debe ser un número entero.");
+    //         }
+
+    //         // Validar fechas
+    //         try {
+    //             String fechaRadicacionStr = rowData.get("Fecha y Hora Radicación");
+    //             String fechaRespuestaStr = rowData.get("Fecha Respuesta");
+    //             String fechaNotificacionStr = rowData.get("Fecha Notificación");
+    //             // String fechaTransferenciaSsdpStr = rowData.get("Fecha Transferencia SSPD");
+
+    //             Date fechaRadicacion = fechaRadicacionStr != null ? parseDate(fechaRadicacionStr) : null;
+    //             Date fechaRespuesta = fechaRespuestaStr != null ? parseDate(fechaRespuestaStr) : null;
+    //             Date fechaNotificacion = fechaNotificacionStr != null ? parseDate(fechaNotificacionStr) : null;
+    //             // Date fechaTransferenciaSsdp = fechaTransferenciaSsdpStr != null ? parseDate(fechaTransferenciaSsdpStr) : null;
+
+    //             // Validar que Fecha Respuesta sea mayor o igual a Fecha Radicación
+    //             if (fechaRadicacion != null && fechaRespuesta != null) {
+    //                 if (fechaRespuesta.before(fechaRadicacion)) {
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body("La fecha de respuesta en los datos guardados debe ser mayor o igual a la fecha y hora de radicación.");
+    //                 }
+    //             }
+
+    //             // Validar que Fecha Notificación sea mayor o igual a Fecha Respuesta
+    //             if (fechaRespuesta != null && fechaNotificacion != null) {
+    //                 if (fechaNotificacion.before(fechaRespuesta)) {
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body("La fecha de notificación en los datos guardados debe ser mayor o igual a la fecha de respuesta.");
+    //                 }
+    //             }
+    //         } catch (ParseException e) {
+    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                     .body("Error al analizar las fechas en los datos guardados. Asegúrese de que el formato de fecha sea correcto.");
+    //         }
+    //     }
+    //     // Guardar datos en la base de datos
+    //     //dataService.saveData(savedData); // posiblemente no envie la informacion guardada, si es asi con el voton de guardar agregar la validacion de los campos.
+
+    //     // Si pasa todas las validaciones
+    //     return ResponseEntity.ok("Los datos han sido validados exitosamente y enviados a SIEC.");
+    // }
 
     @Autowired
     private DataService dataService;
 
-    // Método para validar datos editados 
-    @PostMapping("/validateEditedData") //Intentar que este boton valide y guarde los cambios realizados en la vista
-    public ResponseEntity<String> validateEditedData() {
-        // if (savedData.isEmpty()) {
-        //     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        //             .body("No hay datos guardados para validar.");
-        // }
+    //private List<Map<String, String>> savedData;
 
+    // Método para validar y guardar datos en un solo paso
+    @PostMapping("/validateAndSaveFile")
+    public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData) {
+        this.savedData = new ArrayList<>(editedData);
+
+        // Validación de datos
         for (Map<String, String> rowData : savedData) {
             String departamentoDANEValue = rowData.get("Departamento DANE");
             String ciudadDANEValue = rowData.get("Ciudad DANE");
@@ -309,64 +400,96 @@ public class FileController {
                                 ciudadDANEValue));
             }
 
-            // Validar que el grupo causal corresponda con los códigos asignados por detalle causal
+            // Validación de Grupo Causal y Detalle Causal
             try {
                 Integer detalleCausal = Integer.parseInt(detalleCausalStr);
 
-                if ("P".equalsIgnoreCase(grupoCausal)) {
-                    if (!CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
-                    }
-                } else if ("F".equalsIgnoreCase(grupoCausal)) {
-                    if (!CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
-                    }
+                if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
+                } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
                 }
             } catch (NumberFormatException e) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Error: El valor de Detalle Causal debe ser un número entero.");
             }
 
-            // Validar fechas
+            // Validación de fechas
             try {
-                String fechaRadicacionStr = rowData.get("Fecha y Hora Radicación");
-                String fechaRespuestaStr = rowData.get("Fecha Respuesta");
-                String fechaNotificacionStr = rowData.get("Fecha Notificación");
-                // String fechaTransferenciaSsdpStr = rowData.get("Fecha Transferencia SSPD");
+                Date fechaRadicacion = parseDate(rowData.get("Fecha y Hora Radicación"));
+                Date fechaRespuesta = parseDate(rowData.get("Fecha Respuesta"));
+                Date fechaNotificacion = parseDate(rowData.get("Fecha Notificación"));
 
-                Date fechaRadicacion = fechaRadicacionStr != null ? parseDate(fechaRadicacionStr) : null;
-                Date fechaRespuesta = fechaRespuestaStr != null ? parseDate(fechaRespuestaStr) : null;
-                Date fechaNotificacion = fechaNotificacionStr != null ? parseDate(fechaNotificacionStr) : null;
-                // Date fechaTransferenciaSsdp = fechaTransferenciaSsdpStr != null ? parseDate(fechaTransferenciaSsdpStr) : null;
-
-                // Validar que Fecha Respuesta sea mayor o igual a Fecha Radicación
-                if (fechaRadicacion != null && fechaRespuesta != null) {
-                    if (fechaRespuesta.before(fechaRadicacion)) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body("La fecha de respuesta en los datos guardados debe ser mayor o igual a la fecha y hora de radicación.");
-                    }
+                if (fechaRespuesta != null && fechaRadicacion != null && fechaRespuesta.before(fechaRadicacion)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.");
                 }
-
-                // Validar que Fecha Notificación sea mayor o igual a Fecha Respuesta
-                if (fechaRespuesta != null && fechaNotificacion != null) {
-                    if (fechaNotificacion.before(fechaRespuesta)) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body("La fecha de notificación en los datos guardados debe ser mayor o igual a la fecha de respuesta.");
-                    }
+                if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("La fecha de notificación debe ser mayor o igual a la fecha de respuesta.");
                 }
             } catch (ParseException e) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Error al analizar las fechas en los datos guardados. Asegúrese de que el formato de fecha sea correcto.");
+                        .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
             }
         }
-        // Guardar datos en la base de datos
-        //dataService.saveData(savedData); // posiblemente no envie la informacion guardada, si es asi con el voton de guardar agregar la validacion de los campos.
 
-        // Si pasa todas las validaciones
-        return ResponseEntity.ok("Los datos han sido validados exitosamente y enviados a SIEC.");
+        // Guardar datos temporalmente y generar el archivo de Excel
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Hoja1");
+            Row headerRow = sheet.createRow(0);
+            Map<String, String> firstRow = savedData.get(0);
+            int cellIndex = 0;
+
+            for (String key : firstRow.keySet()) {
+                Cell cell = headerRow.createCell(cellIndex++);
+                cell.setCellValue(key);
+            }
+
+            int rowIndex = 1;
+            for (Map<String, String> rowData : savedData) {
+                Row row = sheet.createRow(rowIndex++);
+                cellIndex = 0;
+                for (String value : rowData.values()) {
+                    Cell cell = row.createCell(cellIndex++);
+                    cell.setCellValue(value);
+                }
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            byte[] fileBytes = outputStream.toByteArray();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDispositionFormData("attachment", "Formato15.xlsx");
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+
+            // return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+            return ResponseEntity.ok("Los datos han sido validados exitosamente.");
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al generar el archivo Excel.");
+        }
     }
+
+    // Método para enviar los datos a la base de datos
+    @PostMapping("/sendToDatabase")
+    public ResponseEntity<String> sendDataToDatabase() {
+        if (savedData == null || savedData.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No hay datos validados para enviar.");
+        }
+
+        try {
+            dataService.saveData(savedData);
+            return ResponseEntity.ok("Los datos han sido enviados exitosamente a la base de datos.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al guardar los datos en la base de datos.");
+        }
+    }
+
 
     // Método auxiliar para convertir una cadena de texto a un objeto Date
     private Date parseDate(String dateStr) throws ParseException {
