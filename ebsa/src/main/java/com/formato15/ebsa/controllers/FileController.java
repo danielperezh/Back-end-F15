@@ -209,7 +209,7 @@ public class FileController {
                 for (Cell cell : row) {
                     String columnName = headerRow.getCell(cell.getColumnIndex()).getStringCellValue();
                     if (columnName.equals("Fecha y Hora Radicación") || columnName.equals("Fecha Respuesta")
-                            || columnName.equals("Fecha Notificación")) {
+                            || columnName.equals("Fecha Notificación") || columnName.equals("Fecha Transferencia SSPD")) {
                         rowData.put(columnName, formatCellDate(cell));
                     } else {
                         rowData.put(columnName, getCellStringValue(cell));
@@ -283,10 +283,10 @@ public class FileController {
     // Método para validar datos editados 
     @PostMapping("/validateEditedData") //Intentar que este boton valide y guarde los cambios realizados en la vista
     public ResponseEntity<String> validateEditedData() {
-        // if (savedData.isEmpty()) {
-        //     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        //             .body("No hay datos guardados para validar.");
-        // }
+        if (savedData.isEmpty()) { // hay que realizar la modificacion de esta logica parq que guarde y valide la informacion y si estas son correctas apareca el boton de enviar
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("No hay datos guardados para validar.");
+        }
 
         for (Map<String, String> rowData : savedData) {
             String departamentoDANEValue = rowData.get("Departamento DANE");
