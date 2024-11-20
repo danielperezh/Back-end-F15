@@ -25,22 +25,12 @@ public class Formato15 {
     @Column(name = "mes")
     private Integer mes;
 
-    // @Column(name = "departamento_dane")
-    // private Integer departamentoDane;
-
-    // @Column(name = "ciudad_dane")
-    // private String ciudadDane;
-
-    // @Column(name = "asentamiento")
-    // private String asentamiento;
-
     @Column(name="codigo_dane") //codigo_dane
-    private String codigoDane;
+    private Integer codigoDane;
 
-    //@Id
     @Column(name="radicado_recibido") //radicado_recibido
     private String radicadoRecibido;
-    //@Temporal(TemporalType.TIMESTAMP)
+    
     @Column(name="fecha_reclamacion") // fecha_reclamacion
     private Timestamp  fechaHoraRadicacion;
 
@@ -57,23 +47,22 @@ public class Formato15 {
     private String numeroCuenta;
 
     @Column(name="id_factura") // id_factura
-    private String numeroFactura;
+    private Integer numeroFactura;
 
     @Column(name="tipo_respuesta") // tipo_respuesta
-    private String tipoRespuesta;
-    //@Temporal(TemporalType.TIMESTAMP)
+    private Integer tipoRespuesta;
+    
     @Column(name="fecha_respuesta") // fecha_respuesta
     private String fechaRespuesta;
  
     @Column(name="radicado_respuesta") // radicado_respuesta 
     private String radicadoRespuesta;
-    //@Temporal(TemporalType.TIMESTAMP)
+    
     @Column(name="fecha_notificacion") // fecha_notificacion
     private String fechaNotificacion;
  
     @Column(name="tipo_notificacion") // tipo_notificacion
     private String tipoNotificacion;
-    //@Temporal(TemporalType.TIMESTAMP)
 
     @Column(name="fecha_traslado_sspd") // fecha_traslado_sspd
     private String fechaTransferenciaSspd;
@@ -85,25 +74,6 @@ public class Formato15 {
     public void setId(Long id) {
         this.id = id;
     }
-    // public Integer getDepartamentoDane() {
-    //     return departamentoDane;
-    // }
-    // public void setDepartamentoDane(Integer departamentoDane) {
-    //     this.departamentoDane = departamentoDane;
-    // }
-    // public String getCiudadDane() {
-    //     return ciudadDane;
-    // }
-    // public void setCiudadDane(String ciudadDane) {
-    //     this.ciudadDane = ciudadDane;
-    // }
-    // public String getAsentamiento() {
-    //     return asentamiento;
-    // }
-    // public void setAsentamiento(String asentamiento) {
-    //     this.asentamiento = asentamiento;
-    // }
-    
     public String getRadicadoRecibido() {
         return radicadoRecibido;
     }
@@ -135,16 +105,16 @@ public class Formato15 {
         this.detalleCausal = detalleCausal;
     }
     
-    public String getNumeroFactura() {
+    public Integer getNumeroFactura() {
         return numeroFactura;
     }
-    public void setNumeroFactura(String numeroFactura) {
+    public void setNumeroFactura(Integer numeroFactura) {
         this.numeroFactura = numeroFactura;
     }
-    public String getTipoRespuesta() {
+    public Integer getTipoRespuesta() {
         return tipoRespuesta;
     }
-    public void setTipoRespuesta(String tipoRespuesta) {
+    public void setTipoRespuesta(Integer tipoRespuesta) {
         this.tipoRespuesta = tipoRespuesta;
     }
     public String getFechaRespuesta() {
@@ -183,11 +153,23 @@ public class Formato15 {
     public void setNumeroCuenta(String numeroCuenta) {
         this.numeroCuenta = numeroCuenta;
     }
-    public String getCodigoDane() {
+    public Integer getCodigoDane() {
         return codigoDane;
     }
-    public void setCodigoDane(String codigoDane) {
+    public void setCodigoDane(Integer codigoDane) {
         this.codigoDane = codigoDane;
+    }
+    public Integer getAno() {
+        return ano;
+    }
+    public void setAno(Integer ano) {
+        this.ano = ano;
+    }
+    public Integer getMes() {
+        return mes;
+    }
+    public void setMes(Integer mes) {
+        this.mes = mes;
     }
 
     

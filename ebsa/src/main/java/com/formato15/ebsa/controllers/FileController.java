@@ -77,7 +77,7 @@ public class FileController {
     private static final List<Integer> CODIGOS_DETALLE_CAUSAL_F = Arrays.asList(101, 102, 103, 104, 105, 106, 107, 108,
             109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124);
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
     // Variable temporal para almacenar los datos guardados
     private List<Map<String, String>> savedData = new ArrayList<>();
@@ -216,10 +216,10 @@ public class FileController {
                     }
 
                     // Modificar "Número Factura" a "N"
-                    Cell facturaCell = row.getCell(facturaColumnIndex);
-                    if (facturaCell != null) {
-                        facturaCell.setCellValue("N");
-                    }
+                    // Cell facturaCell = row.getCell(facturaColumnIndex);
+                    // if (facturaCell != null) {
+                    //     facturaCell.setCellValue("N");
+                    // }
                 }
                 rows.add(rowData);
             }
@@ -491,7 +491,7 @@ public class FileController {
 
     // Método auxiliar para convertir una cadena de texto a un objeto Date
     private Date parseDate(String dateStr) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
         return dateFormat.parse(dateStr);
     }
 
