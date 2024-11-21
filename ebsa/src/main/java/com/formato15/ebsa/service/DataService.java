@@ -47,7 +47,7 @@ public class DataService {
                 String fechaReclamacionStr = rowData.get("Fecha y Hora Radicación");
                 LocalDate fechaReclamacion = LocalDate.parse(
                     fechaReclamacionStr,
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                    DateTimeFormatter.ofPattern("dd-MM-yyyy")
                 );
 
                 // Asignar año y mes a la entidad
@@ -57,12 +57,13 @@ public class DataService {
                 // Asignar fecha_reclamacion como Timestamp
                 dataEntity.setFechaHoraRadicacion(
                     Timestamp.valueOf(
-                        LocalDateTime.parse(
+                        LocalDate.parse(
                             fechaReclamacionStr,
-                            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-                        )
+                            DateTimeFormatter.ofPattern("dd-MM-yyyy")
+                        ).atStartOfDay() // Establece la hora como 00:00
                     )
                 );
+
 
                 // dataEntity.setFechaHoraRadicacion(
                 //     Timestamp.valueOf(

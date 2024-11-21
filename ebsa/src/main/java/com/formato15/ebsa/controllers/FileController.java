@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.formato15.ebsa.clases.Cuenta;
+import com.formato15.ebsa.service.CuentaService;
 import com.formato15.ebsa.service.DataService;
 
 import java.io.IOException;
@@ -77,7 +79,7 @@ public class FileController {
     private static final List<Integer> CODIGOS_DETALLE_CAUSAL_F = Arrays.asList(101, 102, 103, 104, 105, 106, 107, 108,
             109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124);
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy");
 
     // Variable temporal para almacenar los datos guardados
     private List<Map<String, String>> savedData = new ArrayList<>();
@@ -199,7 +201,8 @@ public class FileController {
                         Collections.singletonList(Map.of("error", "El archivo contiene columnas no permitidas.")));
             }
 
-            int facturaColumnIndex = findColumnIndex(headerRow, "Número Factura");
+            //int facturaColumnIndex = findColumnIndex(headerRow, "Número Factura");
+            //int fechaSspdColumnIndex = findColumnIndex(headerRow, "Fecha Transferencia SSPD");
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0)
@@ -218,6 +221,12 @@ public class FileController {
                     // Modificar "Número Factura" a "N"
                     // Cell facturaCell = row.getCell(facturaColumnIndex);
                     // if (facturaCell != null) {
+                    //     facturaCell.setCellValue("N");
+                    // }
+
+                    //Modificar "Fecha Transferencia SSPD" a "N"
+                    // Cell facturaCell = row.getCell(fechaSspdColumnIndex);
+                    // if (facturaCell == null) {
                     //     facturaCell.setCellValue("N");
                     // }
                 }
@@ -371,6 +380,9 @@ public class FileController {
     @Autowired
     private DataService dataService;
 
+    @Autowired
+    private CuentaService cuentaService;
+
     // Método para validar y guardar datos en un solo paso
     @PostMapping("/validateAndSaveFile")
     public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData) {
@@ -382,6 +394,10 @@ public class FileController {
             String ciudadDANEValue = rowData.get("Ciudad DANE");
             String grupoCausal = rowData.get("Grupo Causal");
             String detalleCausalStr = rowData.get("Detalle Causal");
+            String accountNumber = rowData.get("es>Account Number");
+
+            // Obtener los primeros 6 dígitos del número de cuenta
+            String matricula = accountNumber.substring(0, 6);
 
             // Validar Departamento y Ciudad
             if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
@@ -396,6 +412,21 @@ public class FileController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(String.format("El código de ciudad %s no es válido para el departamento 68.",
                                 ciudadDANEValue));
+            }
+
+            // Consultar en la base de datos los datos asociados a la matrícula
+            Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matricula);
+
+            if (cuentaOptional.isPresent()) {
+                Cuenta cuenta = cuentaOptional.get();
+
+                // Validar que los datos de departamento y ciudad coincidan
+                if (!cuenta.getDepartamento().equals(departamentoDANEValue) || 
+                    !cuenta.getMunicipio().equals(ciudadDANEValue)) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(String.format("Error en la fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) no coincide con los datos en la base de datos (Departamento: %s, Municipio: %s).",
+                                accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()));
+                }
             }
 
             // Validación de Grupo Causal y Detalle Causal
@@ -458,7 +489,7 @@ public class FileController {
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
-            byte[] fileBytes = outputStream.toByteArray();
+            //byte[] fileBytes = outputStream.toByteArray();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentDispositionFormData("attachment", "Formato15.xlsx");
@@ -491,7 +522,7 @@ public class FileController {
 
     // Método auxiliar para convertir una cadena de texto a un objeto Date
     private Date parseDate(String dateStr) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         return dateFormat.parse(dateStr);
     }
 

@@ -8,3 +8,5 @@ import com.formato15.ebsa.clases.Formato15;
 @Repository
 public interface DataRepository extends JpaRepository<Formato15, Long> {
 }
+
+
