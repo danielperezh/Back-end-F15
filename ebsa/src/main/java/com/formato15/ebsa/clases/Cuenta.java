@@ -11,27 +11,27 @@ public class Cuenta {
 
     @Id
     @Column(name = "matricula")
-    private Number matricula;
+    private Long matricula;
 
     @Column(name = "departamento")
-    private Number departamento;
+    private Integer departamento;
 
     @Column(name = "municipio")
-    private Number ciudad;
+    private Integer ciudad;
 
-    public Number getDepartamento() {
+    public Integer getDepartamento() {
         return departamento;
     }
 
-    public void setDepartamento(Number departamento) {
+    public void setDepartamento(Integer departamento) {
         this.departamento = departamento;
     }
 
-    public Number getMunicipio() {
+    public Integer getMunicipio() {
         return ciudad;
     }
 
-    public void setMunicipio(Number ciudad) {
+    public void setMunicipio(Integer ciudad) {
         this.ciudad = ciudad;
     }
 

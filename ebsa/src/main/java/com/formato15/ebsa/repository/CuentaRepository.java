@@ -14,5 +14,5 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
 
     // Consulta para verificar matrícula y obtener departamento y municipio
     @Query("SELECT c FROM Cuenta c WHERE c.matricula = :matricula")
-    Optional<Cuenta> findByMatricula(@Param("matricula") String matricula);
+    Optional<Cuenta> findByMatricula(@Param("matricula") Long matricula);
 }

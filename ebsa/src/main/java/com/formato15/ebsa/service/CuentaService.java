@@ -14,7 +14,7 @@ public class CuentaService {
     @Autowired
     private CuentaRepository cuentaRepository;
 
-    public Optional<Cuenta> getCuentaPorMatricula(String matricula) {
+    public Optional<Cuenta> getCuentaPorMatricula(Long matricula) {
         return cuentaRepository.findByMatricula(matricula);
     }
 }

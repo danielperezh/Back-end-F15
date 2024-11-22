@@ -201,34 +201,38 @@ public class FileController {
                         Collections.singletonList(Map.of("error", "El archivo contiene columnas no permitidas.")));
             }
 
-            //int facturaColumnIndex = findColumnIndex(headerRow, "Número Factura");
+            // Obtener los nombres de las columnas en el orden original
+            List<String> columnNames = new ArrayList<>();
+            for (Cell cell : headerRow) {
+                columnNames.add(cell.getStringCellValue());
+            }
+
+            // Obtener el índice de la columna "Fecha Transferencia SSPD"
             //int fechaSspdColumnIndex = findColumnIndex(headerRow, "Fecha Transferencia SSPD");
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0)
+                if (row.getRowNum() == 0) // Saltar la fila del encabezado
                     continue;
 
                 Map<String, String> rowData = new LinkedHashMap<>();
-                for (Cell cell : row) {
-                    String columnName = headerRow.getCell(cell.getColumnIndex()).getStringCellValue();
+                
+                // Iterar sobre las columnas según el orden del encabezado
+                for (int i = 0; i < columnNames.size(); i++) {
+                    String columnName = columnNames.get(i);
+                    Cell cell = row.getCell(i);
+
                     if (columnName.equals("Fecha y Hora Radicación") || columnName.equals("Fecha Respuesta")
                             || columnName.equals("Fecha Notificación") || columnName.equals("Fecha Transferencia SSPD")) {
-                        rowData.put(columnName, formatCellDate(cell));
+                        // Verificar si la celda está vacía y asignar "N" para "Fecha Transferencia SSPD"
+                        if (columnName.equals("Fecha Transferencia SSPD") 
+                                && (cell == null || getCellStringValue(cell).isEmpty())) {
+                            rowData.put(columnName, "N");
+                        } else {
+                            rowData.put(columnName, formatCellDate(cell));
+                        }
                     } else {
                         rowData.put(columnName, getCellStringValue(cell));
                     }
-
-                    // Modificar "Número Factura" a "N"
-                    // Cell facturaCell = row.getCell(facturaColumnIndex);
-                    // if (facturaCell != null) {
-                    //     facturaCell.setCellValue("N");
-                    // }
-
-                    //Modificar "Fecha Transferencia SSPD" a "N"
-                    // Cell facturaCell = row.getCell(fechaSspdColumnIndex);
-                    // if (facturaCell == null) {
-                    //     facturaCell.setCellValue("N");
-                    // }
                 }
                 rows.add(rowData);
             }
@@ -239,6 +243,7 @@ public class FileController {
         }
         return ResponseEntity.ok(rows);
     }
+
 
     // // Método para guardar datos editados
     // @PostMapping("/saveFile")
@@ -397,7 +402,10 @@ public class FileController {
             String accountNumber = rowData.get("es>Account Number");
 
             // Obtener los primeros 6 dígitos del número de cuenta
-            String matricula = accountNumber.substring(0, 6);
+            //String matricula = accountNumber.substring(0, 6);
+            Long matricula = Long.parseLong(accountNumber.substring(0, 6)); // Asumiendo que es un Long
+            Integer departamentoDANE = Integer.parseInt(departamentoDANEValue); // Asumiendo que es un Integer
+            Integer ciudadDANE = Integer.parseInt(ciudadDANEValue); // Asumiendo que es un Integer
 
             // Validar Departamento y Ciudad
             if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
@@ -419,13 +427,15 @@ public class FileController {
 
             if (cuentaOptional.isPresent()) {
                 Cuenta cuenta = cuentaOptional.get();
-
+            
                 // Validar que los datos de departamento y ciudad coincidan
-                if (!cuenta.getDepartamento().equals(departamentoDANEValue) || 
-                    !cuenta.getMunicipio().equals(ciudadDANEValue)) {
+                if (!cuenta.getDepartamento().equals(departamentoDANE) || 
+                    !cuenta.getMunicipio().equals(ciudadDANE)) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(String.format("Error en la fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) no coincide con los datos en la base de datos (Departamento: %s, Municipio: %s).",
-                                accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()));
+                            .body(String.format(
+                                "Error en la fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) no coincide con los datos en la base de datos (Departamento: %s, Municipio: %s).",
+                                accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()
+                            ));
                 }
             }
 
