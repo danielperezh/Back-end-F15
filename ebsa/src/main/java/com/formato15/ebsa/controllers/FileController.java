@@ -4,25 +4,18 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.formato15.ebsa.clases.Cuenta;
-import com.formato15.ebsa.clases.Formato15;
-import com.formato15.ebsa.clases.FormatoSiec;
 import com.formato15.ebsa.service.CuentaService;
 import com.formato15.ebsa.service.DataService;
 import com.formato15.ebsa.service.Formato15Service;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -30,6 +23,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
 
 
 @RestController
@@ -39,10 +33,19 @@ public class FileController {
     private static final Logger log = LoggerFactory.getLogger(FileController.class);
 
     private final Formato15Service formato15Service;
+    //private final formato15Service fileProcessingService;
 
     public FileController(Formato15Service formato15Service) {
-            this.formato15Service = formato15Service;
+        this.formato15Service = formato15Service;
+        //this.fileProcessingService = fileProcessingService;
     }
+
+    
+
+    // public FileController(Formato15Service formato15Service, FileProcessingService fileProcessingService) {
+    //         this.formato15Service = formato15Service;
+    //         this.fileProcessingService = fileProcessingService;
+    // }
 
     // Definir columnas permitidas
     private static final Set<String> ALLOWED_COLUMNS = new HashSet<>() {
@@ -102,109 +105,6 @@ public class FileController {
     // Variable temporal para almacenar los datos guardados
     private List<Map<String, String>> savedData = new ArrayList<>();
 
-    // @PostMapping("/validation")
-    // public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file) {
-    //     try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-    //         Sheet sheet = workbook.getSheetAt(0);
-
-    //         // Validar encabezado del archivo
-    //         Row headerRow = sheet.getRow(0);
-    //         if (!validateColumns(headerRow)) {
-    //             String errorMessage = "El archivo contiene columnas no permitidas. Verifique que el archivo contenga solo las columnas requeridas.";
-    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-    //         }
-
-    //         // Buscar el índice de las columnas necesarias
-    //         int departamentoDANEIndex = findColumnIndex(headerRow, "Departamento DANE");
-    //         int ciudadDANEIndex = findColumnIndex(headerRow, "Ciudad DANE");
-    //         int fechaRadicacionIndex = findColumnIndex(headerRow, "Fecha y Hora Radicación");
-    //         int fechaRespuestaIndex = findColumnIndex(headerRow, "Fecha Respuesta");
-    //         int fechaNotificacionIndex = findColumnIndex(headerRow, "Fecha Notificación");
-
-    //         // Validar cada fila del archivo
-    //         for (Row row : sheet) {
-    //             if (row.getRowNum() > 0) { // Ignorar la fila de encabezado
-    //                 // Validar Departamento y Ciudad
-    //                 Cell departamentoDANE = row.getCell(departamentoDANEIndex);
-    //                 Cell ciudadDANE = row.getCell(ciudadDANEIndex);
-
-    //                 String departamentoDANEValue = getCellStringValue(departamentoDANE);
-    //                 String ciudadDANEValue = getCellStringValue(ciudadDANE);
-
-    //                 // Validación para código de departamento nulo o igual a "0"
-    //                 if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
-    //                     String errorMessage = String.format(
-    //                             "El código del departamento no puede ser nulo o igual a 0 en la fila %d.",
-    //                             row.getRowNum() + 1);
-    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-    //                 }
-
-    //                 // Validaciones de Ciudad DANE para departamentos específicos
-    //                 if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
-    //                     String errorMessage = String.format(
-    //                             "El código de ciudad %s no es válido para el departamento 15 en la fila %d.",
-    //                             ciudadDANEValue, row.getRowNum() + 1);
-    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-    //                 } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
-    //                     String errorMessage = String.format(
-    //                             "El código de ciudad %s no es válido para el departamento 68 en la fila %d.",
-    //                             ciudadDANEValue, row.getRowNum() + 1);
-    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-    //                 }
-
-    //                 // Validar fechas
-    //                 Cell fechaRadicacionCell = row.getCell(fechaRadicacionIndex);
-    //                 Cell fechaRespuestaCell = row.getCell(fechaRespuestaIndex);
-    //                 Cell fechaNotificacionCell = row.getCell(fechaNotificacionIndex);
-
-    //                 // Validar Fecha Respuesta
-    //                 if (fechaRadicacionCell != null && fechaRespuestaCell != null) {
-    //                     if (fechaRespuestaCell.getCellType() == CellType.NUMERIC
-    //                             && DateUtil.isCellDateFormatted(fechaRespuestaCell)) {
-    //                         Date fechaRadicacion = fechaRadicacionCell.getDateCellValue();
-    //                         Date fechaRespuesta = fechaRespuestaCell.getDateCellValue();
-
-    //                         if (fechaRespuesta.before(fechaRadicacion)) {
-    //                             String errorMessage = String.format(
-    //                                     "La fecha de respuesta en la fila %d, columna '%s' debe ser mayor o igual a la fecha y hora de radicación en la fila %d, columna '%s'.",
-    //                                     row.getRowNum() + 1,
-    //                                     headerRow.getCell(fechaRespuestaIndex).getStringCellValue(),
-    //                                     row.getRowNum() + 1,
-    //                                     headerRow.getCell(fechaRadicacionIndex).getStringCellValue());
-    //                             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-    //                         }
-    //                     }
-    //                 }
-
-    //                 // Validar Fecha Notificación
-    //                 if (fechaRespuestaCell != null && fechaNotificacionCell != null) {
-    //                     if (fechaNotificacionCell.getCellType() == CellType.NUMERIC
-    //                             && DateUtil.isCellDateFormatted(fechaNotificacionCell)) {
-    //                         Date fechaRespuesta = fechaRespuestaCell.getDateCellValue();
-    //                         Date fechaNotificacion = fechaNotificacionCell.getDateCellValue();
-
-    //                         if (fechaNotificacion.before(fechaRespuesta)) {
-    //                             String errorMessage = String.format(
-    //                                     "La fecha de notificación en la fila %d, columna '%s' debe ser mayor o igual a la fecha y hora de respuesta en la fila %d, columna '%s'.",
-    //                                     row.getRowNum() + 1,
-    //                                     headerRow.getCell(fechaNotificacionIndex).getStringCellValue(),
-    //                                     row.getRowNum() + 1,
-    //                                     headerRow.getCell(fechaRespuestaIndex).getStringCellValue());
-    //                             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-    //                         }
-    //                     }
-    //                 }
-
-    //             }
-    //         }
-
-    //         // Respuesta exitosa si el archivo cumple con todas las validaciones
-    //         return ResponseEntity.ok("El archivo ha sido validado exitosamente.");
-    //     } catch (IOException e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body("Error al procesar el archivo: " + e.getMessage());
-    //     }
-    // }
 
     @PostMapping("/preview")
     public ResponseEntity<List<Map<String, String>>> previewExcel(@RequestParam("file") MultipartFile file) {
@@ -320,42 +220,36 @@ public class FileController {
         return ResponseEntity.ok(rows);
     }
 
-    
-
-    // @GetMapping("/searchByYearAndMonth")
-    // public ResponseEntity<List<FormatoSiec>> searchByYearAndMonth(
-    //         @RequestParam("ano") Integer ano,
-    //         @RequestParam("mes") Integer mes) {
-    //     try {
-    //         List<FormatoSiec> results = formato15Service.findByYearAndMonth(ano, mes);
-    //         if (results.isEmpty()) {
-    //             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-    //                     .body(Collections.emptyList());
-    //         }
-    //         return ResponseEntity.ok(results);
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(Collections.emptyList());
-    //     }
-    // }
-
-    @GetMapping("/searchByYearAndMonth")
-    public ResponseEntity<List<FormatoSiec>> searchByYearAndMonth(
-            @RequestParam("ano") Integer ano,
-            @RequestParam("mes") Integer mes) {
+    @GetMapping("/loadFromFile")
+    public ResponseEntity<List<Map<String, String>>> loadFile() {
         try {
-            List<FormatoSiec> results = formato15Service.findByYearAndMonth(ano, mes);
-            if (results.isEmpty()) {
-                return ResponseEntity.notFound().build(); // Return 404 Not Found
-            } else {
-                return ResponseEntity.ok(results); // Return 200 OK with the results
-            }
+            List<Map<String, String>> fileData = formato15Service.readFileFromDirectory();
+            return ResponseEntity.ok(fileData);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                   .body(Collections.emptyList());
+            log.error("Error al cargar el archivo: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
 
+    
+
+    // @Autowired
+    // private Formato15Service formato15Service;
+
+    @GetMapping("/findFullInformation")
+    public ResponseEntity<List<Object[]>> findFullInformation(
+            @RequestParam("ano") Integer ano,
+            @RequestParam("mes") Integer mes) {
+        try {
+            List<Object[]> results = formato15Service.findFullInformation(ano, mes);
+            if (results.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+            }
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
 
     @Autowired
     private DataService dataService;
@@ -558,16 +452,6 @@ public class FileController {
         return true;
     }
 
-    // Método para encontrar el índice de una columna por su nombre
-    // private int findColumnIndex(Row headerRow, String columnName) {
-    //     for (Cell cell : headerRow) {
-    //         if (columnName.equals(getCellStringValue(cell))) {
-    //             return cell.getColumnIndex();
-    //         }
-    //     }
-    //     return -1;
-    // }
-
     // Método para obtener el valor de una celda como String
     private String getCellStringValue(Cell cell) {
         if (cell == null)
@@ -591,11 +475,4 @@ public class FileController {
         }
         return "";
     }
-
-    // private Date getDateFromCell(Cell cell) {
-    //     if (cell != null && cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-    //         return cell.getDateCellValue();
-    //     }
-    //     return null;
-    // }
 }
