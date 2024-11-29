@@ -106,119 +106,119 @@ public class FileController {
     private List<Map<String, String>> savedData = new ArrayList<>();
 
 
-    @PostMapping("/preview")
-    public ResponseEntity<List<Map<String, String>>> previewExcel(@RequestParam("file") MultipartFile file) {
-        List<Map<String, String>> rows = new ArrayList<>();
+    // @PostMapping("/preview")
+    // public ResponseEntity<List<Map<String, String>>> previewExcel(@RequestParam("file") MultipartFile file) {
+    //     List<Map<String, String>> rows = new ArrayList<>();
 
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            Row headerRow = sheet.getRow(0);
+    //     try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+    //         Sheet sheet = workbook.getSheetAt(0);
+    //         Row headerRow = sheet.getRow(0);
 
-            // Validar las columnas del archivo
-            if (!validateColumns(headerRow)) {
-                return ResponseEntity.badRequest().body(
-                        Collections.singletonList(Map.of("error", "El archivo contiene columnas no permitidas."))
-                );
-            }
+    //         // Validar las columnas del archivo
+    //         if (!validateColumns(headerRow)) {
+    //             return ResponseEntity.badRequest().body(
+    //                     Collections.singletonList(Map.of("error", "El archivo contiene columnas no permitidas."))
+    //             );
+    //         }
 
-            // Obtener los nombres de las columnas en el orden original
-            List<String> columnNames = new ArrayList<>();
-            for (Cell cell : headerRow) {
-                columnNames.add(cell.getStringCellValue());
-            }
+    //         // Obtener los nombres de las columnas en el orden original
+    //         List<String> columnNames = new ArrayList<>();
+    //         for (Cell cell : headerRow) {
+    //             columnNames.add(cell.getStringCellValue());
+    //         }
 
-            // Procesar las filas del archivo
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) // Saltar la fila del encabezado
-                    continue;
+    //         // Procesar las filas del archivo
+    //         for (Row row : sheet) {
+    //             if (row.getRowNum() == 0) // Saltar la fila del encabezado
+    //                 continue;
 
-                Map<String, String> rowData = new LinkedHashMap<>();
+    //             Map<String, String> rowData = new LinkedHashMap<>();
 
-                // Variables para los valores que serán validados
-                String departamentoDANEValue = null;
-                String ciudadDANEValue = null;
-                String matricula = null;
-                String accountNumber = null;
+    //             // Variables para los valores que serán validados
+    //             String departamentoDANEValue = null;
+    //             String ciudadDANEValue = null;
+    //             String matricula = null;
+    //             String accountNumber = null;
 
-                // Iterar sobre las columnas y obtener los datos de la fila
-                for (int i = 0; i < columnNames.size(); i++) {
-                    String columnName = columnNames.get(i);
-                    Cell cell = row.getCell(i);
+    //             // Iterar sobre las columnas y obtener los datos de la fila
+    //             for (int i = 0; i < columnNames.size(); i++) {
+    //                 String columnName = columnNames.get(i);
+    //                 Cell cell = row.getCell(i);
 
-                    // Obtener los valores relevantes para la validación
-                    if ("Departamento DANE".equals(columnName)) {
-                        departamentoDANEValue = getCellStringValue(cell);
-                    } else if ("Ciudad DANE".equals(columnName)) {
-                        ciudadDANEValue = getCellStringValue(cell);
-                    } else if ("Matrícula".equals(columnName)) {
-                        matricula = getCellStringValue(cell);
-                    } else if ("Account Number".equals(columnName)) {
-                        accountNumber = getCellStringValue(cell);
-                    }
+    //                 // Obtener los valores relevantes para la validación
+    //                 if ("Departamento DANE".equals(columnName)) {
+    //                     departamentoDANEValue = getCellStringValue(cell);
+    //                 } else if ("Ciudad DANE".equals(columnName)) {
+    //                     ciudadDANEValue = getCellStringValue(cell);
+    //                 } else if ("Matrícula".equals(columnName)) {
+    //                     matricula = getCellStringValue(cell);
+    //                 } else if ("Account Number".equals(columnName)) {
+    //                     accountNumber = getCellStringValue(cell);
+    //                 }
 
-                    // Procesar columnas de fecha
-                    if (columnName.equals("Fecha y Hora Radicación") || columnName.equals("Fecha Respuesta")
-                            || columnName.equals("Fecha Notificación") || columnName.equals("Fecha Transferencia SSPD")) {
-                        if (columnName.equals("Fecha Transferencia SSPD") 
-                                && (cell == null || getCellStringValue(cell).isEmpty())) {
-                            rowData.put(columnName, "N");
-                        } else {
-                            rowData.put(columnName, formatCellDate(cell));
-                        }
-                    } else {
-                        rowData.put(columnName, getCellStringValue(cell));
-                    }
-                }
+    //                 // Procesar columnas de fecha
+    //                 if (columnName.equals("Fecha y Hora Radicación") || columnName.equals("Fecha Respuesta")
+    //                         || columnName.equals("Fecha Notificación") || columnName.equals("Fecha Transferencia SSPD")) {
+    //                     if (columnName.equals("Fecha Transferencia SSPD") 
+    //                             && (cell == null || getCellStringValue(cell).isEmpty())) {
+    //                         rowData.put(columnName, "N");
+    //                     } else {
+    //                         rowData.put(columnName, formatCellDate(cell));
+    //                     }
+    //                 } else {
+    //                     rowData.put(columnName, getCellStringValue(cell));
+    //                 }
+    //             }
 
-                // Validar y corregir los datos con cuentaService
-                if (matricula != null) {
-                    // Convertir la matrícula a Long
-                    Long matriculaLong = Long.valueOf(matricula);
-                    Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matriculaLong);
+    //             // Validar y corregir los datos con cuentaService
+    //             if (matricula != null) {
+    //                 // Convertir la matrícula a Long
+    //                 Long matriculaLong = Long.valueOf(matricula);
+    //                 Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matriculaLong);
 
-                    if (cuentaOptional.isPresent()) {
-                        Cuenta cuenta = cuentaOptional.get();
+    //                 if (cuentaOptional.isPresent()) {
+    //                     Cuenta cuenta = cuentaOptional.get();
 
-                        Integer departamentoDANE = Integer.valueOf(departamentoDANEValue);
-                        Integer ciudadDANE = Integer.valueOf(ciudadDANEValue);
+    //                     Integer departamentoDANE = Integer.valueOf(departamentoDANEValue);
+    //                     Integer ciudadDANE = Integer.valueOf(ciudadDANEValue);
 
-                        // Validar y corregir los datos de "Departamento DANE" y "Ciudad DANE"
-                        if (!cuenta.getDepartamento().equals(departamentoDANE) || 
-                            !cuenta.getMunicipio().equals(ciudadDANE)) {
+    //                     // Validar y corregir los datos de "Departamento DANE" y "Ciudad DANE"
+    //                     if (!cuenta.getDepartamento().equals(departamentoDANE) || 
+    //                         !cuenta.getMunicipio().equals(ciudadDANE)) {
 
-                            // Corregir los valores en rowData
-                            rowData.put("Departamento DANE", String.valueOf(cuenta.getDepartamento()));
-                            rowData.put("Ciudad DANE", String.valueOf(cuenta.getMunicipio()));
+    //                         // Corregir los valores en rowData
+    //                         rowData.put("Departamento DANE", String.valueOf(cuenta.getDepartamento()));
+    //                         rowData.put("Ciudad DANE", String.valueOf(cuenta.getMunicipio()));
 
-                            // Registrar un mensaje de advertencia en los logs
-                            log.warn(String.format(
-                                "Fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) eran incorrectos. "
-                                + "Se corrigieron automáticamente a Departamento: %s, Municipio: %s.",
-                                accountNumber, departamentoDANEValue, ciudadDANEValue, 
-                                cuenta.getDepartamento(), cuenta.getMunicipio()
-                            ));
-                        }
-                    } else {
-                        // Si no se encuentra la matrícula en la base de datos, registrar un error
-                        log.error(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(Collections.singletonList(Map.of(
-                                        "error", String.format("No se encontró información para la matrícula %s en la base de datos.", matricula)
-                                )));
-                    }
-                }
+    //                         // Registrar un mensaje de advertencia en los logs
+    //                         log.warn(String.format(
+    //                             "Fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) eran incorrectos. "
+    //                             + "Se corrigieron automáticamente a Departamento: %s, Municipio: %s.",
+    //                             accountNumber, departamentoDANEValue, ciudadDANEValue, 
+    //                             cuenta.getDepartamento(), cuenta.getMunicipio()
+    //                         ));
+    //                     }
+    //                 } else {
+    //                     // Si no se encuentra la matrícula en la base de datos, registrar un error
+    //                     log.error(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body(Collections.singletonList(Map.of(
+    //                                     "error", String.format("No se encontró información para la matrícula %s en la base de datos.", matricula)
+    //                             )));
+    //                 }
+    //             }
 
-                // Agregar los datos procesados a la lista de filas
-                rows.add(rowData);
-            }
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonList(Map.of("error", "Error al procesar el archivo: " + e.getMessage())));
-        }
+    //             // Agregar los datos procesados a la lista de filas
+    //             rows.add(rowData);
+    //         }
+    //     } catch (IOException e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(Collections.singletonList(Map.of("error", "Error al procesar el archivo: " + e.getMessage())));
+    //     }
 
-        // Retornar las filas procesadas
-        return ResponseEntity.ok(rows);
-    }
+    //     // Retornar las filas procesadas
+    //     return ResponseEntity.ok(rows);
+    // }
 
     @GetMapping("/loadFromFile")
     public ResponseEntity<List<Map<String, String>>> loadFile() {
@@ -231,7 +231,26 @@ public class FileController {
         }
     }
 
-    
+    // @GetMapping("/loadFromFile")
+    // public ResponseEntity<Map<String, Object>> loadFile() {
+    //     try {
+    //         List<Map<String, String>> fileData = formato15Service.readFileFromDirectory();
+            
+    //         // Obtener encabezados del primer mapa (asumiendo que todas las filas tienen las mismas claves)
+    //         List<String> headers = fileData.isEmpty() ? new ArrayList<>() : new ArrayList<>(fileData.get(0).keySet());
+
+    //         Map<String, Object> response = new LinkedHashMap<>();
+    //         response.put("headers", headers); // Encabezados ordenados
+    //         response.put("rows", fileData); // Filas de datos
+
+    //         return ResponseEntity.ok(response);
+    //     } catch (Exception e) {
+    //         log.error("Error al cargar el archivo: ", e);
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyMap());
+    //     }
+    // }
+
+
 
     // @Autowired
     // private Formato15Service formato15Service;

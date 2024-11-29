@@ -5,15 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +20,6 @@ import com.formato15.ebsa.repository.Formato15Repository;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-
-import org.apache.poi.ss.usermodel.*;
-import java.util.*;
 
 @Service
 public class Formato15Service {
@@ -41,8 +36,8 @@ public class Formato15Service {
     }
 
     public List<FormatoSiecDTO> findFullInformationDTO(Integer ano, Integer mes) {
-    List<Object[]> results = formato15Repository.findFullInformation(ano, mes);
-    return results.stream().map(this::mapToDTO).collect(Collectors.toList());
+        List<Object[]> results = formato15Repository.findFullInformation(ano, mes);
+        return results.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     private FormatoSiecDTO mapToDTO(Object[] row) {
@@ -67,62 +62,138 @@ public class Formato15Service {
     }
 
     public List<Map<String, String>> readFileFromDirectory() throws IOException, CsvException {
-            File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
-            File[] files = directory.listFiles((dir, name) -> name.endsWith(".csv") || name.endsWith(".xls") || name.endsWith(".xlsx"));
+        File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
+        File[] files = directory.listFiles((dir, name) -> name.endsWith(".csv") || name.endsWith(".xls") || name.endsWith(".xlsx"));
 
-            if (files == null || files.length == 0) {
-                throw new FileNotFoundException("No se encontró ningún archivo CSV/XLS en la ruta especificada.");
-            }
-
-            File file = files[0];
-            if (file.getName().endsWith(".csv")) {
-                return readCSVFile(file);
-            } else {
-                return readExcelFile(file);
-            }
+        if (files == null || files.length == 0) {
+            throw new FileNotFoundException("No se encontró ningún archivo CSV/XLS en la ruta especificada.");
         }
 
-        private List<Map<String, String>> readCSVFile(File file) throws IOException, CsvException {
-            List<Map<String, String>> data = new ArrayList<>();
-            try (CSVReader csvReader = new CSVReader(new FileReader(file))) {
-                List<String[]> rows = csvReader.readAll();
-                String[] headers = rows.get(0);
-                for (int i = 1; i < rows.size(); i++) {
-                    String[] row = rows.get(i);
-                    Map<String, String> rowData = new HashMap<>();
-                    for (int j = 0; j < headers.length; j++) {
-                        rowData.put(headers[j], row[j]);
+        File file = files[0];
+        if (file.getName().endsWith(".csv")) {
+            return readCSVFile(file);
+        } else {
+            return readExcelFile(file);
+        }
+    }
+
+    // private List<Map<String, String>> readCSVFile(File file) throws IOException, CsvException {
+    //     List<Map<String, String>> data = new ArrayList<>();
+    //     try (CSVReader csvReader = new CSVReader(new FileReader(file))) {
+    //         List<String[]> rows = csvReader.readAll();
+    //         String[] headers = rows.get(0); // Encabezados de la primera fila
+
+    //         for (int i = 1; i < rows.size(); i++) {
+    //             String[] row = rows.get(i);
+    //             Map<String, String> rowData = new LinkedHashMap<>(); // Usar LinkedHashMap para mantener el orden
+    //             for (int j = 0; j < headers.length; j++) {
+    //                 rowData.put(headers[j], row[j]);
+    //             }
+    //             data.add(rowData);
+    //         }
+    //     }
+    //     return data;
+    // }
+
+    private List<Map<String, String>> readCSVFile(File file) throws IOException, CsvException {
+        List<Map<String, String>> data = new ArrayList<>();
+        try (CSVReader csvReader = new CSVReader(new FileReader(file))) {
+            List<String[]> rows = csvReader.readAll();
+            String[] headers = rows.get(0); // Encabezados de la primera fila
+
+            for (int i = 1; i < rows.size(); i++) {
+                String[] row = rows.get(i);
+                Map<String, String> rowData = new LinkedHashMap<>(); // Usar LinkedHashMap para mantener el orden
+                for (int j = 0; j < headers.length; j++) {
+                    String value = row[j];
+                    // Intentar convertir a entero si es un número
+                    rowData.put(headers[j], isNumeric(value) && value.contains(".") ? formatAsInteger(value) : value);
+                }
+                data.add(rowData);
+            }
+        }
+        return data;
+    }
+
+    // private List<Map<String, String>> readExcelFile(File file) throws IOException {
+    //     List<Map<String, String>> data = new ArrayList<>();
+    //     try (Workbook workbook = WorkbookFactory.create(file)) {
+    //         Sheet sheet = workbook.getSheetAt(0);
+    //         Iterator<Row> rows = sheet.iterator();
+
+    //         // Leer encabezados
+    //         Row headerRow = rows.next();
+    //         List<String> headers = new ArrayList<>();
+    //         for (Cell cell : headerRow) {
+    //             headers.add(cell.getStringCellValue());
+    //         }
+
+    //         // Leer las filas
+    //         while (rows.hasNext()) {
+    //             Row row = rows.next();
+    //             Map<String, String> rowData = new LinkedHashMap<>(); // Usar LinkedHashMap para mantener el orden
+    //             for (int i = 0; i < headers.size(); i++) {
+    //                 Cell cell = row.getCell(i);
+    //                 rowData.put(headers.get(i), cell != null ? cell.toString() : "");
+    //             }
+    //             data.add(rowData);
+    //         }
+    //     }
+    //     return data;
+    // }
+
+    private List<Map<String, String>> readExcelFile(File file) throws IOException {
+        List<Map<String, String>> data = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Leer encabezados
+            Row headerRow = rows.next();
+            List<String> headers = new ArrayList<>();
+            for (Cell cell : headerRow) {
+                headers.add(cell.getStringCellValue());
+            }
+
+            DataFormatter formatter = new DataFormatter(); // Formateador de celdas
+
+            // Leer las filas
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                Map<String, String> rowData = new LinkedHashMap<>(); // Usar LinkedHashMap para mantener el orden
+                for (int i = 0; i < headers.size(); i++) {
+                    Cell cell = row.getCell(i);
+                    String cellValue = formatter.formatCellValue(cell);
+
+                    // Si es numérico, intentar formatear como entero
+                    if (cell != null && cell.getCellType() == CellType.NUMERIC && cellValue.contains(".")) {
+                        cellValue = formatAsInteger(cellValue);
                     }
-                    data.add(rowData);
+
+                    rowData.put(headers.get(i), cellValue);
                 }
+                data.add(rowData);
             }
-            return data;
         }
+        return data;
+    }
 
-        private List<Map<String, String>> readExcelFile(File file) throws IOException {
-            List<Map<String, String>> data = new ArrayList<>();
-            try (Workbook workbook = WorkbookFactory.create(file)) {
-                Sheet sheet = workbook.getSheetAt(0);
-                Iterator<Row> rows = sheet.iterator();
-
-                Row headerRow = rows.next();
-                List<String> headers = new ArrayList<>();
-                for (Cell cell : headerRow) {
-                    headers.add(cell.getStringCellValue());
-                }
-
-                while (rows.hasNext()) {
-                    Row row = rows.next();
-                    Map<String, String> rowData = new HashMap<>();
-                    for (int i = 0; i < headers.size(); i++) {
-                        Cell cell = row.getCell(i);
-                        rowData.put(headers.get(i), cell != null ? cell.toString() : "");
-                    }
-                    data.add(rowData);
-                }
-            }
-            return data;
+    private String formatAsInteger(String value) {
+        try {
+            double doubleValue = Double.parseDouble(value);
+            int intValue = (int) doubleValue; // Convertir a entero
+            return String.valueOf(intValue);
+        } catch (NumberFormatException e) {
+            return value; // Si no es un número, retornar el valor original
         }
+    }
 
+    private boolean isNumeric(String value) {
+        try {
+            Double.parseDouble(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }
-
