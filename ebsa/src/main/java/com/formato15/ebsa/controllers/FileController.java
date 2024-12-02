@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.formato15.ebsa.clases.Cuenta;
+import com.formato15.ebsa.clases.FormatoSiecDTO;
 import com.formato15.ebsa.service.CuentaService;
 import com.formato15.ebsa.service.DataService;
 import com.formato15.ebsa.service.Formato15Service;
@@ -255,12 +256,27 @@ public class FileController {
     // @Autowired
     // private Formato15Service formato15Service;
 
+    // @GetMapping("/findFullInformation")
+    // public ResponseEntity<List<Object[]>> findFullInformation(
+    //         @RequestParam("ano") Integer ano,
+    //         @RequestParam("mes") Integer mes) {
+    //     try {
+    //         List<Object[]> results = formato15Service.findFullInformation(ano, mes);
+    //         if (results.isEmpty()) {
+    //             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+    //         }
+    //         return ResponseEntity.ok(results);
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+    //     }
+    // }
+
     @GetMapping("/findFullInformation")
-    public ResponseEntity<List<Object[]>> findFullInformation(
+    public ResponseEntity<List<FormatoSiecDTO>> findFullInformation(
             @RequestParam("ano") Integer ano,
             @RequestParam("mes") Integer mes) {
         try {
-            List<Object[]> results = formato15Service.findFullInformation(ano, mes);
+            List<FormatoSiecDTO> results = formato15Service.findFullInformation(ano, mes);
             if (results.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
             }
@@ -269,6 +285,7 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
 
     @Autowired
     private DataService dataService;
@@ -283,17 +300,36 @@ public class FileController {
 
         // Validación de datos
         for (Map<String, String> rowData : savedData) {
-            String departamentoDANEValue = rowData.get("Departamento DANE");
-            String ciudadDANEValue = rowData.get("Ciudad DANE");
-            String grupoCausal = rowData.get("Grupo Causal");
-            String detalleCausalStr = rowData.get("Detalle Causal");
-            String accountNumber = rowData.get("es>Account Number");
+            String departamentoDANEValue = rowData.get("daneDpto");
+            String ciudadDANEValue = rowData.get("daneMpio");
+            String grupoCausal = rowData.get("grupoCausal");
+            String detalleCausalStr = rowData.get("detalleCausal");
+            String accountNumber = rowData.get("niu");
+
+            // Validar que accountNumber no sea nulo
+            if (accountNumber == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("El número de cuenta no puede ser nulo.");
+            }
 
             // Obtener los primeros 6 dígitos del número de cuenta
-            //String matricula = accountNumber.substring(0, 6);
-            Long matricula = Long.parseLong(accountNumber.substring(0, 6)); // Asumiendo que es un Long
-            Integer departamentoDANE = Integer.parseInt(departamentoDANEValue); // Asumiendo que es un Integer
-            Integer ciudadDANE = Integer.parseInt(ciudadDANEValue); // Asumiendo que es un Integer
+            Long matricula;
+            try {
+                matricula = Long.parseLong(accountNumber.substring(0, 6)); // Asumiendo que es un Long
+            } catch (NumberFormatException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("El número de cuenta debe ser numérico y tener al menos 6 dígitos.");
+            }
+
+            Integer departamentoDANE;
+            Integer ciudadDANE;
+            try {
+                departamentoDANE = Integer.parseInt(departamentoDANEValue); // Asumiendo que es un Integer
+                ciudadDANE = Integer.parseInt(ciudadDANEValue); // Asumiendo que es un Integer
+            } catch (NumberFormatException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("El código del departamento y el código de la ciudad deben ser numéricos.");
+            }
 
             // Validar Departamento y Ciudad
             if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
@@ -302,30 +338,11 @@ public class FileController {
             }
             if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(String.format("El código de ciudad %s no es válido para el departamento 15.",
-                                ciudadDANEValue));
+                        .body(String.format("El código de ciudad %s no es válido para el departamento 15.", ciudadDANEValue));
             } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(String.format("El código de ciudad %s no es válido para el departamento 68.",
-                                ciudadDANEValue));
+                        .body(String.format("El código de ciudad %s no es válido para el departamento 68.", ciudadDANEValue));
             }
-
-            // Consultar en la base de datos los datos asociados a la matrícula
-            // Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matricula);
-
-            // if (cuentaOptional.isPresent()) {
-            //     Cuenta cuenta = cuentaOptional.get();
-            
-            //     // Validar que los datos de departamento y ciudad coincidan
-            //     if (!cuenta.getDepartamento().equals(departamentoDANE) || 
-            //         !cuenta.getMunicipio().equals(ciudadDANE)) {
-            //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            //                 .body(String.format(
-            //                     "Error en la fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) no coincide con los datos en la base de datos (Departamento: %s, Municipio: %s).",
-            //                     accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()
-            //                 ));
-            //     }
-            // }
 
             // Consultar en la base de datos los datos asociados a la matrícula
             Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matricula);
@@ -334,18 +351,15 @@ public class FileController {
                 Cuenta cuenta = cuentaOptional.get();
 
                 // Validar y corregir los datos de departamento y ciudad
-                if (!cuenta.getDepartamento().equals(departamentoDANE) || 
-                    !cuenta.getMunicipio().equals(ciudadDANE)) {
-                    
+                if (!cuenta.getDepartamento().equals(departamentoDANE) || !cuenta.getMunicipio().equals(ciudadDANE)) {
                     // Corregir los valores en rowData
-                    rowData.put("Departamento DANE", String.valueOf(cuenta.getDepartamento()));
-                    rowData.put("Ciudad DANE", String.valueOf(cuenta.getMunicipio()));
+                    rowData.put("daneDpto", String.valueOf(cuenta.getDepartamento()));
+                    rowData.put("daneMpio", String.valueOf(cuenta.getMunicipio()));
 
                     // Registrar un mensaje de advertencia en los logs
                     log.warn(String.format(
-                        "Fila con numero de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) eran incorrectos. Se corrigieron automaticamente a Departamento: %s, Municipio: %s.",
-                        accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()
-                    ));
+                            "Fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) eran incorrectos. Se corrigieron automáticamente a Departamento: %s, Municipio: %s.",
+                            accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()));
                 }
             } else {
                 // Si no se encuentra la matrícula en la base de datos, registrar un error
@@ -353,7 +367,6 @@ public class FileController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
             }
-
 
             // Validación de Grupo Causal y Detalle Causal
             try {
@@ -373,9 +386,9 @@ public class FileController {
 
             // Validación de fechas
             try {
-                Date fechaRadicacion = parseDate(rowData.get("Fecha y Hora Radicación"));
-                Date fechaRespuesta = parseDate(rowData.get("Fecha Respuesta"));
-                Date fechaNotificacion = parseDate(rowData.get("Fecha Notificación"));
+                Date fechaRadicacion = parseDate(rowData.get("fechaReclamacion"));
+                Date fechaRespuesta = parseDate(rowData.get("fechaRespuesta"));
+                Date fechaNotificacion = parseDate(rowData.get("fechaNotificacion"));
 
                 if (fechaRespuesta != null && fechaRadicacion != null && fechaRespuesta.before(fechaRadicacion)) {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -390,7 +403,7 @@ public class FileController {
                         .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
             }
         }
-        // Esta correcion se debe realizar una vez se haga la previsualizacion 
+
         // Guardar datos temporalmente y generar el archivo de Excel
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Hoja1");
@@ -422,12 +435,143 @@ public class FileController {
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 
             return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
-            //return ResponseEntity.ok("Los datos han sido validados exitosamente.");
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al generar el archivo Excel.");
         }
     }
+
+
+    // Método para validar y guardar datos en un solo paso
+    // @PostMapping("/validateAndSaveFile")
+    // public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData) {
+    //     try {
+    //         // Verificar que el JSON recibido no sea nulo ni vacío
+    //         if (editedData == null || editedData.isEmpty()) {
+    //             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                     .body("El archivo recibido está vacío o tiene un formato incorrecto.");
+    //         }
+
+    //         // Guardar datos recibidos
+    //         this.savedData = new ArrayList<>(editedData);
+
+    //         // Validación de datos fila por fila
+    //         for (Map<String, String> rowData : savedData) {
+    //             // Validar existencia de claves necesarias
+    //             if (!rowData.containsKey("Departamento DANE") || !rowData.containsKey("Ciudad DANE")
+    //                     || !rowData.containsKey("es>Account Number") || !rowData.containsKey("Grupo Causal")
+    //                     || !rowData.containsKey("Detalle Causal")) {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body("Una o más filas no contienen las claves necesarias para la validación.");
+    //             }
+
+    //             // Obtener valores de las columnas necesarias
+    //             String departamentoDANEValue = rowData.get("Departamento DANE");
+    //             String ciudadDANEValue = rowData.get("Ciudad DANE");
+    //             String grupoCausal = rowData.get("Grupo Causal");
+    //             String detalleCausalStr = rowData.get("Detalle Causal");
+    //             String accountNumber = rowData.get("es>Account Number");
+
+    //             // Validación de departamento y ciudad
+    //             if (departamentoDANEValue == null || departamentoDANEValue.equals("0")) {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body("El código del departamento no puede ser nulo o igual a 0.");
+    //             }
+
+    //             Integer departamentoDANE = Integer.parseInt(departamentoDANEValue);
+    //             Integer ciudadDANE = Integer.parseInt(ciudadDANEValue);
+
+    //             if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body(String.format("El código de ciudad %s no es válido para el departamento 15.", ciudadDANEValue));
+    //             } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body(String.format("El código de ciudad %s no es válido para el departamento 68.", ciudadDANEValue));
+    //             }
+
+    //             // Validación de matrícula (primeros 6 dígitos del número de cuenta)
+    //             Long matricula;
+    //             try {
+    //                 matricula = Long.parseLong(accountNumber.substring(0, 6));
+    //             } catch (NumberFormatException | IndexOutOfBoundsException e) {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body("El número de cuenta es inválido o no tiene el formato esperado.");
+    //             }
+
+    //             // Consultar información en la base de datos
+    //             Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matricula);
+    //             if (cuentaOptional.isPresent()) {
+    //                 Cuenta cuenta = cuentaOptional.get();
+
+    //                 // Corregir datos de departamento y ciudad si no coinciden
+    //                 if (!cuenta.getDepartamento().equals(departamentoDANE)
+    //                         || !cuenta.getMunicipio().equals(ciudadDANE)) {
+    //                     rowData.put("Departamento DANE", String.valueOf(cuenta.getDepartamento()));
+    //                     rowData.put("Ciudad DANE", String.valueOf(cuenta.getMunicipio()));
+    //                 }
+    //             } else {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
+    //             }
+
+    //             // Validación de Grupo Causal y Detalle Causal
+    //             try {
+    //                 Integer detalleCausal = Integer.parseInt(detalleCausalStr);
+    //                 if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
+    //                 } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
+    //                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                             .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
+    //                 }
+    //             } catch (NumberFormatException e) {
+    //                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                         .body("Error: El valor de Detalle Causal debe ser un número entero.");
+    //             }
+    //         }
+
+    //         // Generar archivo Excel con datos corregidos
+    //         try (Workbook workbook = new XSSFWorkbook()) {
+    //             Sheet sheet = workbook.createSheet("Datos Validados");
+    //             Row headerRow = sheet.createRow(0);
+    //             Map<String, String> firstRow = savedData.get(0);
+    //             int cellIndex = 0;
+
+    //             for (String key : firstRow.keySet()) {
+    //                 Cell cell = headerRow.createCell(cellIndex++);
+    //                 cell.setCellValue(key);
+    //             }
+
+    //             int rowIndex = 1;
+    //             for (Map<String, String> rowData : savedData) {
+    //                 Row row = sheet.createRow(rowIndex++);
+    //                 cellIndex = 0;
+    //                 for (String value : rowData.values()) {
+    //                     Cell cell = row.createCell(cellIndex++);
+    //                     cell.setCellValue(value);
+    //                 }
+    //             }
+
+    //             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    //             workbook.write(outputStream);
+    //             byte[] fileBytes = outputStream.toByteArray();
+
+    //             HttpHeaders headers = new HttpHeaders();
+    //             headers.setContentDispositionFormData("attachment", "Formato15.xlsx");
+    //             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+
+    //             return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+    //         } catch (IOException e) {
+    //             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                     .body("Error al generar el archivo Excel.");
+    //         }
+    //     } catch (Exception e) {
+    //         log.error("Error durante la validación y guardado de datos: ", e);
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body("Ocurrió un error inesperado durante la validación y el guardado de datos.");
+    //     }
+    // }
+
 
     // Método para enviar los datos a la base de datos
     @PostMapping("/sendToDatabase")

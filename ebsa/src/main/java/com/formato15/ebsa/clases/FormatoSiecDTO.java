@@ -1,5 +1,7 @@
 package com.formato15.ebsa.clases;
 
+import java.sql.Timestamp;
+
 public class FormatoSiecDTO {
 
         private String daneDpto;
@@ -18,6 +20,34 @@ public class FormatoSiecDTO {
         private String fechaNotificacion;
         private String tipoNotificacion;
         private String fechaTrasladoSspd;
+
+        // Constructor sin parámetros (por defecto)
+        public FormatoSiecDTO() {
+        }
+
+        public FormatoSiecDTO(String daneDpto, String daneMpio, String daneAsentamiento, String radicadoRecibido, 
+        String fechaReclamacion, String tipoTramite, String grupoCausal, String detalleCausal, 
+                      String niu, String idFactura, String tipoRespuesta, String fechaRespuesta, 
+                      String radicadoRespuesta, String fechaNotificacion, String tipoNotificacion, 
+                      String fechaTrasladoSspd) {
+            this.daneDpto = daneDpto;
+            this.daneMpio = daneMpio;
+            this.daneAsentamiento = daneAsentamiento;
+            this.radicadoRecibido = radicadoRecibido;
+            this.fechaReclamacion = fechaReclamacion;
+            this.tipoTramite = tipoTramite;
+            this.grupoCausal = grupoCausal;
+            this.detalleCausal = detalleCausal;
+            this.niu = niu;
+            this.idFactura = idFactura;
+            this.tipoRespuesta = tipoRespuesta;
+            this.fechaRespuesta = fechaRespuesta;
+            this.radicadoRespuesta = radicadoRespuesta;
+            this.fechaNotificacion = fechaNotificacion;
+            this.tipoNotificacion = tipoNotificacion;
+            this.fechaTrasladoSspd = fechaTrasladoSspd;
+        }
+
         
         public String getDaneDpto() {
             return daneDpto;
