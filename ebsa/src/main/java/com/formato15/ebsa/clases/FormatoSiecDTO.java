@@ -1,8 +1,24 @@
 package com.formato15.ebsa.clases;
 
-import java.sql.Timestamp;
 
 public class FormatoSiecDTO {
+
+    public static final String HEADER_DANE_DPTO = "Departamento DANE";
+    public static final String HEADER_DANE_MPIO = "Ciudad DANE";
+    public static final String HEADER_DANE_ASENTAMIENTO = "Asentamiento";
+    public static final String HEADER_RADICADO_RECIBIDO = "Radicado Recibido";
+    public static final String HEADER_FECHA_RECLAMACION = "Fecha y Hora Radicación";
+    public static final String HEADER_TIPO_TRAMITE = "Tipo trámite";
+    public static final String HEADER_GRUPO_CAUSAL = "Grupo Causal";
+    public static final String HEADER_DETALLE_CAUSAL = "Detalle Causal";
+    public static final String HEADER_NIU = "es>Account Number";
+    public static final String HEADER_ID_FACTURA = "Número Factura";
+    public static final String HEADER_TIPO_RESPUESTA = "Tipo Respuesta";
+    public static final String HEADER_FECHA_RESPUESTA = "Fecha Respuesta";
+    public static final String HEADER_RADICADO_RESPUESTA = "Radicado Respuesta";
+    public static final String HEADER_FECHA_NOTIFICACION = "Fecha Notificación";
+    public static final String HEADER_TIPO_NOTIFICACION = "Tipo Notificación";
+    public static final String HEADER_FECHA_TRASLADO_SSPD = "Fecha Transferencia SSPD";
 
         private String daneDpto;
         private String daneMpio;
