@@ -96,19 +96,28 @@ public class FileController {
     // private Formato15Service formato15Service;
 
     @GetMapping("/findFullInformation")
-    public ResponseEntity<List<FormatoSiecDTO>> findFullInformation(
+    public ResponseEntity<?> findFullInformation(
             @RequestParam("ano") Integer ano,
             @RequestParam("mes") Integer mes) {
         try {
             List<FormatoSiecDTO> results = formato15Service.findFullInformation(ano, mes);
+
             if (results.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+                // Devolver un mensaje de error si no hay resultados
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "No se encontraron datos para la fecha indicada.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
+
             return ResponseEntity.ok(results);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+            // Manejar cualquier otro error
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Ocurrió un error al procesar la solicitud.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
 
 
     @Autowired
@@ -219,7 +228,7 @@ public class FileController {
 
 
     @PostMapping("/validateAndSaveFile")
-    public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData) {
+    public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData, @RequestParam(required = false, defaultValue = "json") String returnType) {
         // Mapa de equivalencias para encabezados
         Map<String, String> headerMappings = Map.ofEntries(
             Map.entry("Departamento DANE", "daneDpto"),
@@ -310,6 +319,7 @@ public class FileController {
                             "Fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) eran incorrectos. Se corrigieron automáticamente a Departamento: %s, Municipio: %s.",
                             accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()));
                 }
+                
             } else {
                 // Si no se encuentra la matrícula en la base de datos, registrar un error
                 log.error(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
@@ -351,7 +361,14 @@ public class FileController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
             }
+            
         }
+        // Verificar el tipo de retorno solicitado
+        if ("json".equalsIgnoreCase(returnType)) {
+            // Retornar los datos validados en formato JSON
+            return ResponseEntity.ok(savedData);
+        }
+    
 
         // Guardar datos temporalmente y generar el archivo de Excel
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -388,6 +405,7 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al generar el archivo Excel.");
         }
+        
     }
 
     // Método para normalizar las filas de datos

@@ -73,7 +73,7 @@ public class Formato15Service {
 
 
     public List<Map<String, String>> readFileFromDirectory() throws IOException, CsvException {
-        File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
+        File directory = new File("C:/Users/usuario/Downloads/Formatos pruebas/prueba");
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".csv") || name.endsWith(".xls") || name.endsWith(".xlsx"));
 
         if (files == null || files.length == 0) {
@@ -130,7 +130,11 @@ public class Formato15Service {
             // Leer las filas
             while (rows.hasNext()) {
                 Row row = rows.next();
-                Map<String, String> rowData = new LinkedHashMap<>(); // Usar LinkedHashMap para mantener el orden
+                if (row == null) {
+                    continue; // Ignorar filas vacías
+                }
+    
+                Map<String, String> rowData = new LinkedHashMap<>();
                 for (int i = 0; i < headers.size(); i++) {
                     Cell cell = row.getCell(i);
                     String cellValue = "";
@@ -144,7 +148,7 @@ public class Formato15Service {
                             cellValue = new DataFormatter().formatCellValue(cell);
                         }
                     }
-
+    
                     // Asignar valor "N" si es nulo o vacío para la columna "Fecha de Traslado SSPD"
                     if ("Fecha Transferencia SSPD".equals(headers.get(i)) && (cellValue == null || cellValue.trim().isEmpty())) {
                         cellValue = "N";
@@ -157,6 +161,7 @@ public class Formato15Service {
         }
         return data;
     }
+    
 
     // Método para formatear una fecha al formato dd-MM-yyyy
     private String formatExcelDate(Date date) {
