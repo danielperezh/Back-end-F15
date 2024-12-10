@@ -73,7 +73,7 @@ public class Formato15Service {
 
 
     public List<Map<String, String>> readFileFromDirectory() throws IOException, CsvException {
-        File directory = new File("C:/Users/usuario/Downloads/Formatos pruebas/prueba");
+        File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".csv") || name.endsWith(".xls") || name.endsWith(".xlsx"));
 
         if (files == null || files.length == 0) {

@@ -31,6 +31,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import org.springframework.beans.factory.annotation.Value;
+import java.util.Map;
+
+
 
 @RestController
 @RequestMapping("/api/excel")
@@ -148,81 +152,91 @@ public class FileController {
     //     private String password;
     // }
 
+    // @RestController
+    // @RequestMapping("/api/auth")
+    // public class AuthController {
+
+    //     @Autowired
+    //     private UsuarioRepositorio usuarioRepositorio;
+
+    //     @PostMapping("/login")
+    //     public ResponseEntity<?> login(@RequestBody Usuario request) {
+    //         String username = request.getUsuario();
+    //         String password = request.getContrasena();
+
+    //         Optional<Usuario> usuarioOptional = usuarioRepositorio.findByUsuario(username);
+
+    //         if (usuarioOptional.isPresent()) {
+    //             Usuario usuario = usuarioOptional.get();
+
+    //             if (password.equals(usuario.getContrasena())) {
+    //                 //System.out.println("Autenticación exitosa. Generando token...");
+    //                 String token = "fake-jwt-token"; // Cambiar por un token real
+    //                 return ResponseEntity.ok(Map.of("success", true, "token", token));
+    //             } else {
+    //                 System.out.println("Contraseña incorrecta.");
+    //                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+    //                         .body(Map.of("success", false, "message", "Contraseña incorrecta."));
+    //             }
+    //         } else {
+    //             System.out.println("Usuario no encontrado: " + username);
+    //             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+    //                     .body(Map.of("success", false, "message", "Usuario no encontrado."));
+    //         }
+    //     }
+
+    // }
+
     @RestController
     @RequestMapping("/api/auth")
     public class AuthController {
 
-        @Autowired
-        private UsuarioRepositorio usuarioRepositorio;
+        // URL de conexión a la base de datos (debe incluir el host, puerto y SID/servicio)
+        @Value("${spring.datasource.url}")
+        private String databaseUrl;
 
-        // @PostMapping("/login")
-        // public ResponseEntity<?> login(@RequestBody Usuario request) {
-        //     String usuario = request.getUsuario();
-        //     String contrasena = request.getContrasena();
+        // Credenciales administrativas para conectar a la base de datos en caso de necesitar validaciones adicionales
+        @Value("${spring.datasource.username}")
+        private String adminUser;
 
-        //     // Log: Datos recibidos del cliente
-        //     System.out.println("Login attempt: Usuario = " + usuario + ", Contraseña = " + contrasena);
+        @Value("${spring.datasource.password}")
+        private String adminPassword;
 
-        //     // Buscar el usuario en la base de datos
-        //     Optional<Usuario> usuarioOptional = usuarioRepositorio.findByUsuario(usuario);
-
-        //     if (usuarioOptional.isPresent()) {
-        //         Usuario usuarios = usuarioOptional.get();
-
-        //         // Log: Usuario encontrado
-        //         System.out.println("Usuario encontrado: " + usuarios.getUsuario());
-        //         System.out.println("Contraseña almacenada: " + usuarios.getContrasena());
-
-        //         // Validar la contraseña
-        //         if (contrasena.equals(usuarios.getContrasena())) {
-        //             // Log: Contraseña válida
-        //             System.out.println("Contraseña válida para el usuario: " + usuario);
-
-        //             // Generar token (aquí puedes implementar JWT real)
-        //             String token = "fake-jwt-token";
-
-        //             // Log: Autenticación exitosa
-        //             System.out.println("Autenticación exitosa. Generando token...");
-        //             return ResponseEntity.ok(Map.of("success", true, "token", token));
-        //         } else {
-        //             // Log: Contraseña incorrecta
-        //             System.out.println("Contraseña incorrecta para el usuario: " + usuario);
-        //             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        //                     .body(Map.of("success", false, "message", "Contraseña incorrecta."));
-        //         }
-        //     } else {
-        //         // Log: Usuario no encontrado
-        //         System.out.println("Usuario no encontrado: " + usuario);
-        //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        //                 .body(Map.of("success", false, "message", "Usuario no encontrado."));
-        //     }
-        // }
         @PostMapping("/login")
-        public ResponseEntity<?> login(@RequestBody Usuario request) {
-            String username = request.getUsuario();
-            String password = request.getContrasena();
+        public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+            String username = request.get("usuario");
+            String password = request.get("contrasena");
 
-            Optional<Usuario> usuarioOptional = usuarioRepositorio.findByUsuario(username);
-
-            if (usuarioOptional.isPresent()) {
-                Usuario usuario = usuarioOptional.get();
-
-                if (password.equals(usuario.getContrasena())) {
-                    //System.out.println("Autenticación exitosa. Generando token...");
+            try (Connection connection = validateOracleUser(username, password)) {
+                // Si la conexión es exitosa, generar un token o confirmar autenticación
+                if (connection != null) {
+                    // Aquí podrías generar un JWT o responder con éxito
                     String token = "fake-jwt-token"; // Cambiar por un token real
                     return ResponseEntity.ok(Map.of("success", true, "token", token));
-                } else {
-                    System.out.println("Contraseña incorrecta.");
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(Map.of("success", false, "message", "Contraseña incorrecta."));
                 }
-            } else {
-                System.out.println("Usuario no encontrado: " + username);
+            } catch (SQLException e) {
+                // Manejar errores de conexión
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("success", false, "message", "Usuario no encontrado."));
+                        .body(Map.of("success", false, "message", "Usuario o contraseña incorrectos."));
             }
+
+            // Si algo falla, retornar error genérico
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error al procesar la solicitud."));
         }
 
+        /**
+         * Método para validar las credenciales del usuario contra Oracle.
+         *
+         * @param username Usuario de Oracle.
+         * @param password Contraseña del usuario.
+         * @return Una conexión válida si el usuario y contraseña son correctos.
+         * @throws SQLException Si las credenciales son incorrectas.
+         */
+        private Connection validateOracleUser(String username, String password) throws SQLException {
+            String userConnectionUrl = databaseUrl.replace(adminUser, username); // Cambiar el usuario en la URL
+            return DriverManager.getConnection(userConnectionUrl, username, password); // Intentar conexión
+        }
     }
 
 
@@ -418,20 +432,20 @@ public class FileController {
     }
 
     // Método para enviar los datos a la base de datos
-    @PostMapping("/sendToDatabase")
-    public ResponseEntity<String> sendDataToDatabase() {
-        if (savedData == null || savedData.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No hay datos validados para enviar.");
-        }
+    // @PostMapping("/sendToDatabase")
+    // public ResponseEntity<String> sendDataToDatabase() {
+    //     if (savedData == null || savedData.isEmpty()) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No hay datos validados para enviar.");
+    //     }
 
-        try {
-            dataService.saveData(savedData);
-            return ResponseEntity.ok("Los datos han sido enviados exitosamente a la base de datos.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error al guardar los datos en la base de datos.");
-        }
-    }
+    //     try {
+    //         dataService.saveData(savedData);
+    //         return ResponseEntity.ok("Los datos han sido enviados exitosamente a la base de datos.");
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body("Error al guardar los datos en la base de datos.");
+    //     }
+    // }
 
 
     // Método auxiliar para convertir una cadena de texto a un objeto Date
