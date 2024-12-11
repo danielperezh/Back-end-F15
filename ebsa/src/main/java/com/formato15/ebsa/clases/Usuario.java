@@ -3,17 +3,17 @@ package com.formato15.ebsa.clases;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "FORMATO_15_USER")
+@Table(name = "dba_users")
 public class Usuario {
 
     @Id
-    @Column(name = "id")
+    @Column(name = "user_id")
     private String id; // Cambiado de long a String
 
-    @Column(name = "usuario", nullable = false, unique = true)
+    @Column(name = "username", nullable = false, unique = true)
     private String usuario;
 
-    @Column(name = "contrasena", nullable = false)
+    @Column(name = "password", nullable = false)
     private String contrasena;
 
     public String getUsuario() {

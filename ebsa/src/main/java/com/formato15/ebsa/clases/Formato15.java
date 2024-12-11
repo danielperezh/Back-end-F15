@@ -1,6 +1,5 @@
 package com.formato15.ebsa.clases;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;

@@ -18,6 +18,9 @@ import com.formato15.ebsa.service.CuentaService;
 import com.formato15.ebsa.service.DataService;
 import com.formato15.ebsa.service.Formato15Service;
 
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -29,10 +32,12 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Value;
-import java.util.Map;
+
 
 
 
@@ -135,27 +140,6 @@ public class FileController {
     // @RequestMapping("/api/auth")
     // public class AuthController {
 
-    //     @PostMapping("/login")
-    //     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-    //         if ("admin".equals(request.getUsername()) && "password".equals(request.getPassword())) {
-    //             String token = "fake-jwt-token"; // Generar token real con JWT
-    //             return ResponseEntity.ok(Map.of("success", true, "token", token));
-    //         }
-    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Credenciales incorrectas"));
-    //     }
-    // }
-
-    // // Clase para recibir las credenciales
-    // @Data
-    // public class LoginRequest {
-    //     private String username;
-    //     private String password;
-    // }
-
-    // @RestController
-    // @RequestMapping("/api/auth")
-    // public class AuthController {
-
     //     @Autowired
     //     private UsuarioRepositorio usuarioRepositorio;
 
@@ -187,20 +171,68 @@ public class FileController {
 
     // }
 
+    // @RestController
+    // @RequestMapping("/api/auth")
+    // public class AuthController {
+
+    //     // URL de conexión a la base de datos (debe incluir el host, puerto y SID/servicio)
+    //     @Value("${spring.datasource.url}")
+    //     private String databaseUrl;
+
+    //     // Credenciales administrativas para conectar a la base de datos en caso de necesitar validaciones adicionales
+    //     @Value("${spring.datasource.username}")
+    //     private String adminUser;
+
+    //     // @Value("${spring.datasource.password}")
+    //     // private String adminPassword;
+
+    //     @PostMapping("/login")
+    //     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+            
+    //         String username = request.get("usuario");
+    //         String password = request.get("contrasena");
+
+    //         try (Connection connection = validateOracleUser(username, password)) {
+    //             // Si la conexión es exitosa, generar un token o confirmar autenticación
+    //             if (connection != null) {
+    //                 // Aquí podrías generar un JWT o responder con éxito
+    //                 String token = "fake-jwt-token"; // Cambiar por un token real
+    //                 return ResponseEntity.ok(Map.of("success", true, "token", token));
+    //             }
+    //         } catch (SQLException e) {
+    //             log.error("Error de conexión: " + e.getMessage(), e); // Registra el error de SQL
+    //             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+    //                     .body(Map.of("success", false, "message", "Usuario o contraseña incorrectos."));
+    //         }            
+
+    //         // Si algo falla, retornar error genérico
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(Map.of("success", false, "message", "Error al procesar la solicitud."));
+    //     }
+
+    //     /**
+    //      * Método para validar las credenciales del usuario contra Oracle.
+    //      *
+    //      * @param username Usuario de Oracle.
+    //      * @param password Contraseña del usuario.
+    //      * @return Una conexión válida si el usuario y contraseña son correctos.
+    //      * @throws SQLException Si las credenciales son incorrectas.
+    //      */
+    //     private Connection validateOracleUser(String username, String password) throws SQLException {
+    //         String userConnectionUrl = databaseUrl.replace(adminUser, username); // Cambiar el usuario en la URL
+    //         return DriverManager.getConnection(userConnectionUrl, username, password); // Intentar conexión
+    //     }
+    // }
+
     @RestController
     @RequestMapping("/api/auth")
     public class AuthController {
 
-        // URL de conexión a la base de datos (debe incluir el host, puerto y SID/servicio)
         @Value("${spring.datasource.url}")
         private String databaseUrl;
 
-        // Credenciales administrativas para conectar a la base de datos en caso de necesitar validaciones adicionales
         @Value("${spring.datasource.username}")
         private String adminUser;
-
-        @Value("${spring.datasource.password}")
-        private String adminPassword;
 
         @PostMapping("/login")
         public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
@@ -208,25 +240,22 @@ public class FileController {
             String password = request.get("contrasena");
 
             try (Connection connection = validateOracleUser(username, password)) {
-                // Si la conexión es exitosa, generar un token o confirmar autenticación
                 if (connection != null) {
-                    // Aquí podrías generar un JWT o responder con éxito
+                    // Si la conexión es exitosa, generar un token o confirmar autenticación
                     String token = "fake-jwt-token"; // Cambiar por un token real
                     return ResponseEntity.ok(Map.of("success", true, "token", token));
                 }
             } catch (SQLException e) {
-                // Manejar errores de conexión
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("success", false, "message", "Usuario o contraseña incorrectos."));
             }
 
-            // Si algo falla, retornar error genérico
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error al procesar la solicitud."));
         }
 
         /**
-         * Método para validar las credenciales del usuario contra Oracle.
+         * Método para validar las credenciales del usuario contra la vista sys.dba_users.
          *
          * @param username Usuario de Oracle.
          * @param password Contraseña del usuario.
@@ -234,11 +263,26 @@ public class FileController {
          * @throws SQLException Si las credenciales son incorrectas.
          */
         private Connection validateOracleUser(String username, String password) throws SQLException {
-            String userConnectionUrl = databaseUrl.replace(adminUser, username); // Cambiar el usuario en la URL
-            return DriverManager.getConnection(userConnectionUrl, username, password); // Intentar conexión
+            // Asegúrate de usar el nombre del servicio o SID correcto
+            String userConnectionUrl = databaseUrl.replace(adminUser, username);
+
+            // Realiza la validación de usuario y contraseña en la vista sys.dba_users
+            String sql = "SELECT username FROM sys.dba_users WHERE username = ? AND password = ?";
+
+            try (Connection connection = DriverManager.getConnection(userConnectionUrl, username, password);
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, username);
+                statement.setString(2, password);
+
+                ResultSet resultSet = statement.executeQuery();
+                if (resultSet.next()) {
+                    return connection; // Si el usuario existe y la contraseña es correcta
+                }
+            }
+
+            return null; // Si las credenciales no son válidas
         }
     }
-
 
 
     @PostMapping("/validateAndSaveFile")
