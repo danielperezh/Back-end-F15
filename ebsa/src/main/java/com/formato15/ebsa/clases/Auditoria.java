@@ -10,10 +10,12 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import jakarta.persistence.Id;
 
+
 @Data
 @Entity
 @Table(name = "auditoria_formato_15")
-public class Formato15 {
+public class Auditoria {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,9 +50,49 @@ public class Formato15 {
         return usuario;
     }
 
-    public void setMunicipio(String usuario) {
+    public void setUsuario(String usuario) {
         this.usuario = usuario;
     }
 
-    
+    public String getAccion() {
+        return accion;
+    }
+
+    public void setAccion(String accion) {
+        this.accion = accion;
+    }
+
+    public String getCampoModificado() {
+        return campoModificado;
+    }
+
+    public void setCampoModificado(String campoModificado) {
+        this.campoModificado = campoModificado;
+    }
+
+    public String getValorAnterior() {
+        return valorAnterior;
+    }
+
+    public void setValorAnterior(String valorAnterior) {
+        this.valorAnterior = valorAnterior;
+    }
+
+    public String getValorNuevo() {
+        return valorNuevo;
+    }
+
+    public void setValorNuevo(String valorNuevo) {
+        this.valorNuevo = valorNuevo;
+    }
+
+    public LocalDateTime getFechaModificacion() {
+        return fechaModificacion;
+    }
+
+    public void setFechaModificacion(LocalDateTime fechaModificacion) {
+        this.fechaModificacion = fechaModificacion;
+    }
+
+
 }

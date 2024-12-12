@@ -10,10 +10,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.formato15.ebsa.clases.Auditoria;
 import com.formato15.ebsa.clases.Cuenta;
 import com.formato15.ebsa.clases.FormatoSiecDTO;
 import com.formato15.ebsa.clases.Usuario;
+import com.formato15.ebsa.repository.AuditoriaFormato15Repository;
 import com.formato15.ebsa.repository.UsuarioRepositorio;
+import com.formato15.ebsa.service.AuditoriaService;
 import com.formato15.ebsa.service.CuentaService;
 import com.formato15.ebsa.service.DataService;
 import com.formato15.ebsa.service.Formato15Service;
@@ -23,6 +26,7 @@ import jakarta.validation.Valid;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -131,6 +135,7 @@ public class FileController {
 
     @Autowired
     private DataService dataService;
+    
 
     @Autowired
     private CuentaService cuentaService;
@@ -284,6 +289,12 @@ public class FileController {
         }
     }
 
+    @Autowired
+    private AuditoriaService auditoriaService;
+
+    @Autowired
+    private AuditoriaFormato15Repository auditoriaRepository;
+
 
     @PostMapping("/validateAndSaveFile")
     public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData, @RequestParam(required = false, defaultValue = "json") String returnType) {
@@ -321,6 +332,11 @@ public class FileController {
             String grupoCausal = rowData.get("grupoCausal");
             String detalleCausalStr = rowData.get("detalleCausal");
             String accountNumber = rowData.get("niu");
+            String usuario = "admin"; // Obtén el usuario autenticado
+            String accion = "MODIFICAR"; // Obtén el usuario autenticado
+            String rolUsuario = "ADMIN"; // Obtén el rol del usuario
+            String nombreArchivo = "formato15.xlsx"; // Nombre del archivo procesado
+
 
             // Validar que accountNumber no sea nulo
             if (accountNumber == null) {
@@ -347,21 +363,65 @@ public class FileController {
                         .body("El código del departamento y el código de la ciudad deben ser numéricos.");
             }
 
+
             // Validar Departamento y Ciudad
             if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("El código del departamento no puede ser nulo o igual a 0.");
             }
-            if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(String.format("El código de ciudad %s no es válido para el departamento 15.", ciudadDANEValue));
-            } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(String.format("El código de ciudad %s no es válido para el departamento 68.", ciudadDANEValue));
-            }
+            // if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
+            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //             .body(String.format("El código de ciudad %s no es válido para el departamento 15.", ciudadDANEValue));
+            // } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
+            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //             .body(String.format("El código de ciudad %s no es válido para el departamento 68.", ciudadDANEValue));
+            // }
 
             // Consultar en la base de datos los datos asociados a la matrícula
             Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matricula);
+            
+             if (cuentaOptional.isPresent()) {
+            Cuenta cuenta = cuentaOptional.get();
+
+            // Validar discrepancias
+            if (!cuenta.getDepartamento().equals(departamentoDANE) || !cuenta.getMunicipio().equals(ciudadDANE)) {
+                    // Insertar registro en la tabla de auditoría
+                    if (!cuenta.getDepartamento().equals(departamentoDANE)) {
+                        // Registro para cambio en Departamento DANE
+                        Auditoria auditoriaDepartamento = new Auditoria();
+                        auditoriaDepartamento.setUsuario(usuario);
+                        auditoriaDepartamento.setAccion(accion);
+                        auditoriaDepartamento.setCampoModificado("Departamento DANE");
+                        auditoriaDepartamento.setValorAnterior(departamentoDANEValue); // Valor original en archivo
+                        auditoriaDepartamento.setValorNuevo(String.valueOf(cuenta.getDepartamento())); // Nuevo valor en la base de datos
+                        auditoriaDepartamento.setFechaModificacion(LocalDateTime.now());
+                        auditoriaRepository.save(auditoriaDepartamento);
+                    }
+                    
+                    if (!cuenta.getMunicipio().equals(ciudadDANE)) {
+                        // Registro para cambio en Ciudad DANE
+                        Auditoria auditoriaMunicipio = new Auditoria();
+                        auditoriaMunicipio.setUsuario(usuario);
+                        auditoriaMunicipio.setAccion(accion);
+                        auditoriaMunicipio.setCampoModificado("Ciudad DANE");
+                        auditoriaMunicipio.setValorAnterior(ciudadDANEValue); // Valor original en archivo
+                        auditoriaMunicipio.setValorNuevo(String.valueOf(cuenta.getMunicipio()));
+                        auditoriaMunicipio.setFechaModificacion(LocalDateTime.now());
+                        auditoriaRepository.save(auditoriaMunicipio);
+                    }
+                    
+                    // Si ninguno de los dos campos se modifica, puedes registrar un log informativo o simplemente omitir la auditoría.
+                    if (cuenta.getDepartamento().equals(departamentoDANE) && cuenta.getMunicipio().equals(ciudadDANE)) {
+                        log.info(String.format("No hubo cambios en Departamento (%s) ni Ciudad (%s) para la cuenta %s.",
+                                departamentoDANE, ciudadDANE, accountNumber));
+                    }
+                }
+            } else {
+                // Manejo de error si no se encuentra la cuenta
+                log.error(String.format("No se encontró información para la matrícula %s en la base de datos.", accountNumber));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(String.format("No se encontró información para la matrícula %s en la base de datos.", accountNumber));
+            }
 
             if (cuentaOptional.isPresent()) {
                 Cuenta cuenta = cuentaOptional.get();
@@ -371,6 +431,8 @@ public class FileController {
                     // Corregir los valores en rowData
                     rowData.put("daneDpto", String.valueOf(cuenta.getDepartamento()));
                     rowData.put("daneMpio", String.valueOf(cuenta.getMunicipio()));
+                    // Comparar datos originales con los modificados
+                    //compareAndAudit(rowData, cuenta, accountNumber);
 
                     // Registrar un mensaje de advertencia en los logs
                     log.warn(String.format(
@@ -385,18 +447,64 @@ public class FileController {
                         .body(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
             }
 
+            // // Validación de Grupo Causal y Detalle Causal
+            // try {
+            //     Integer detalleCausal = Integer.parseInt(detalleCausalStr);
+
+            //     if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
+            //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //                 .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
+            //     } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
+            //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //                 .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
+            //     }
+            // } catch (NumberFormatException e) {
+            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //             .body("Error: El valor de Detalle Causal debe ser un número entero.");
+            // }
+
             // Validación de Grupo Causal y Detalle Causal
             try {
                 Integer detalleCausal = Integer.parseInt(detalleCausalStr);
 
                 if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
+                    // Registro de auditoría
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.setUsuario(usuario);
+                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setCampoModificado("Detalle Causal");
+                    auditoria.setValorAnterior(detalleCausalStr);
+                    auditoria.setValorNuevo(rowData.get("fechaRespuesta")); // No se modifica el valor, solo se registra el error
+                    auditoria.setFechaModificacion(LocalDateTime.now());
+                    auditoriaRepository.save(auditoria);
+
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
                 } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
+                    // Registro de auditoría
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.setUsuario(usuario);
+                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setCampoModificado("Detalle Causal");
+                    auditoria.setValorAnterior(detalleCausalStr);
+                    auditoria.setValorNuevo("N/A");
+                    auditoria.setFechaModificacion(LocalDateTime.now());
+                    auditoriaRepository.save(auditoria);
+
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
                 }
             } catch (NumberFormatException e) {
+                // Registro de auditoría por error de formato
+                Auditoria auditoria = new Auditoria();
+                auditoria.setUsuario(usuario);
+                auditoria.setAccion("Error de Formato");
+                auditoria.setCampoModificado("Detalle Causal");
+                auditoria.setValorAnterior(detalleCausalStr);
+                auditoria.setValorNuevo("N/A");
+                auditoria.setFechaModificacion(LocalDateTime.now());
+                auditoriaRepository.save(auditoria);
+
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error: El valor de Detalle Causal debe ser un número entero.");
             }
@@ -408,17 +516,67 @@ public class FileController {
                 Date fechaNotificacion = parseDate(rowData.get("fechaNotificacion"));
 
                 if (fechaRespuesta != null && fechaRadicacion != null && fechaRespuesta.before(fechaRadicacion)) {
+                    // Registro de auditoría por inconsistencia en fechas
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.setUsuario(usuario);
+                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setCampoModificado("Fecha Respuesta");
+                    auditoria.setValorAnterior(rowData.get("fechaRespuesta"));
+                    auditoria.setValorNuevo("Debe ser mayor o igual a " + rowData.get("fechaReclamacion"));
+                    auditoria.setFechaModificacion(LocalDateTime.now());
+                    auditoriaRepository.save(auditoria);
+
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.");
                 }
                 if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
+                    // Registro de auditoría por inconsistencia en fechas
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.setUsuario(usuario);
+                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setCampoModificado("Fecha Notificación");
+                    auditoria.setValorAnterior(rowData.get("fechaNotificacion"));
+                    auditoria.setValorNuevo("Debe ser mayor o igual a " + rowData.get("fechaRespuesta"));
+                    auditoria.setFechaModificacion(LocalDateTime.now());
+                    auditoriaRepository.save(auditoria);
+
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("La fecha de notificación debe ser mayor o igual a la fecha de respuesta.");
                 }
             } catch (ParseException e) {
+                // Registro de auditoría por error al analizar las fechas
+                Auditoria auditoria = new Auditoria();
+                auditoria.setUsuario(usuario);
+                auditoria.setAccion("Error de Formato");
+                auditoria.setCampoModificado("Fechas");
+                auditoria.setValorAnterior("N/A");
+                auditoria.setValorNuevo("Error en el formato de fechas");
+                auditoria.setFechaModificacion(LocalDateTime.now());
+                auditoriaRepository.save(auditoria);
+
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
             }
+
+            // Validación de fechas
+            // try {
+            //     Date fechaRadicacion = parseDate(rowData.get("fechaReclamacion"));
+            //     Date fechaRespuesta = parseDate(rowData.get("fechaRespuesta"));
+            //     Date fechaNotificacion = parseDate(rowData.get("fechaNotificacion"));
+
+            //     if (fechaRespuesta != null && fechaRadicacion != null && fechaRespuesta.before(fechaRadicacion)) {
+            //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //                 .body("La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.");
+            //     }
+            //     if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
+            //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //                 .body("La fecha de notificación debe ser mayor o igual a la fecha de respuesta.");
+            //     }
+            // } catch (ParseException e) {
+            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //             .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
+            // }
+            
             
         }
         // Verificar el tipo de retorno solicitado
@@ -466,6 +624,55 @@ public class FileController {
         
     }
 
+    
+    private String getOldValueFromCuenta(String field, Cuenta cuenta) {
+        switch (field) {
+            case "daneDpto":
+                return String.valueOf(cuenta.getDepartamento());
+            case "daneMpio":
+                return String.valueOf(cuenta.getMunicipio());
+            // Agregar más campos según los datos de la entidad Cuenta
+            default:
+                return null; // Si no se encuentra el campo
+        }
+    }
+    
+
+    // private void compareAndAudit(Map<String, String> editedRow, Cuenta originalData, String accountNumber) {
+    //     String usuario = "admin"; // Obtén el usuario autenticado
+    //     String rolUsuario = "ADMIN"; // Obtén el rol del usuario
+    //     String nombreArchivo = "formato15.xlsx"; // Nombre del archivo procesado
+    
+    //     // Comparar campos específicos
+    //     if (!String.valueOf(originalData.getDepartamento()).equals(editedRow.get("daneDpto"))) {
+    //         auditoriaService.registrarCambio(
+    //             usuario,
+    //             rolUsuario,
+    //             nombreArchivo,
+    //             "MODIFICAR",
+    //             "Departamento DANE",
+    //             String.valueOf(originalData.getDepartamento()),
+    //             editedRow.get("daneDpto")
+    //         );
+    //     }
+    
+    //     if (!String.valueOf(originalData.getMunicipio()).equals(editedRow.get("daneMpio"))) {
+    //         auditoriaService.registrarCambio(
+    //             usuario,
+    //             rolUsuario,
+    //             nombreArchivo,
+    //             "MODIFICAR",
+    //             "Ciudad DANE",
+    //             String.valueOf(originalData.getMunicipio()),
+    //             editedRow.get("daneMpio")
+    //         );
+    //     }
+        
+    
+    //     // Repite para otros campos que desees auditar
+    // }
+    
+
     // Método para normalizar las filas de datos
     private Map<String, String> normalizeRow(Map<String, String> row, Map<String, String> headerMappings) {
         return row.entrySet().stream()
@@ -475,7 +682,7 @@ public class FileController {
             ));
     }
 
-    // Método para enviar los datos a la base de datos
+    //Método para enviar los datos a la base de datos
     // @PostMapping("/sendToDatabase")
     // public ResponseEntity<String> sendDataToDatabase() {
     //     if (savedData == null || savedData.isEmpty()) {
