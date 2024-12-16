@@ -73,7 +73,7 @@ public class Formato15Service {
 
 
     public List<Map<String, String>> readFileFromDirectory(String year, String month) throws IOException, CsvException {
-        File directory = new File("C:/Users/usuario/Downloads/Formatos pruebas/prueba");
+        File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
         
         // Filtrar archivos por año y mes en el nombre (formato esperado: formato_15_YYYYMM.ext)
         String filePattern = String.format("formato_15_%s%s", year, month);
@@ -107,6 +107,16 @@ public class Formato15Service {
                 for (int j = 0; j < row.length; j++) {
                     String columnName = "columna_" + (j + 1); // Generar nombre de columna dinámico
                     String value = row[j];
+
+                    // Si estamos en la columna 16 (índice 15), verificamos si el valor es nulo o vacío
+                    if (j == 15 && (value == null || value.trim().isEmpty())) {
+                        value = "N"; // Asignamos "N" a los campos nulos o vacíos
+                    }
+
+                    // Si estamos en la columna 10 (índice 9), asignamos "N" independientemente de su valor
+                    if (j == 9) {
+                        value = "N"; // Asignamos "N" a todos los valores de la columna 10
+                    }
     
                     // Validar y convertir fechas si es necesario
                     if (isDate(value)) {

@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.formato15.ebsa.clases.Auditoria;
@@ -39,6 +40,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -235,6 +238,7 @@ public class FileController {
     //     }
     // }
 
+    @CrossOrigin(origins = "http://localhost:8080")
     @RestController
     @RequestMapping("/api/auth")
     public class AuthController {
@@ -297,27 +301,48 @@ public class FileController {
     @Autowired
     private AuditoriaFormato15Repository auditoriaRepository;
 
+    public ResponseEntity<String> obtenerUsuarioLogueado() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || "anonymousUser".equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("El usuario no está autenticado.");
+        }
+        String usuarioLogueado = authentication.getName(); // Nombre de usuario obtenido del JWT
+        return ResponseEntity.ok("Usuario logueado: " + usuarioLogueado);
+    }
+
 
     @PostMapping("/validateAndSaveFile")
     public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData, @RequestParam(required = false, defaultValue = "json") String returnType) {
+
+         // Obtener el usuario logueado
+         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+         if (authentication == null || "anonymousUser".equals(authentication.getName())) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                     .body("El usuario no está autenticado.");
+         }
+         String usuarioLogueado = authentication.getName();
+         
+         
+
         // Mapa de equivalencias para encabezados
         Map<String, String> headerMappings = Map.ofEntries(
-            Map.entry("Departamento DANE", "daneDpto"),
-            Map.entry("Ciudad DANE", "daneMpio"),
-            Map.entry("Asentamiento", "daneAsentamiento"),
-            Map.entry("Radicado Recibido", "radicadoRecibido"),
-            Map.entry("Fecha y Hora Radicación", "fechaReclamacion"),
-            Map.entry("Tipo trámite", "tipoTramite"),
-            Map.entry("Grupo Causal", "grupoCausal"),
-            Map.entry("Detalle Causal", "detalleCausal"),
-            Map.entry("es>Account Number", "niu"),
-            Map.entry("Número Factura", "idFactura"),
-            Map.entry("Tipo Respuesta", "tipoRespuesta"),
-            Map.entry("Fecha Respuesta", "fechaRespuesta"),
-            Map.entry("Radicado Respuesta", "radicadoRespuesta"),
-            Map.entry("Fecha Notificación", "fechaNotificacion"),
-            Map.entry("Tipo Notificación", "tipoNotificacion"),
-            Map.entry("Fecha Transferencia SSPD", "fechaTrasladoSspd")
+            Map.entry("columna_1", "daneDpto"),
+            Map.entry("columna_2", "daneMpio"),
+            Map.entry("columna_3", "daneAsentamiento"),
+            Map.entry("columna_4", "radicadoRecibido"),
+            Map.entry("columna_5", "fechaReclamacion"),
+            Map.entry("columna_6", "tipoTramite"),
+            Map.entry("columna_7", "grupoCausal"),
+            Map.entry("columna_8", "detalleCausal"),
+            Map.entry("columna_9", "niu"),
+            Map.entry("columna_10", "idFactura"),
+            Map.entry("columna_11", "tipoRespuesta"),
+            Map.entry("columna_12", "fechaRespuesta"),
+            Map.entry("columna_13", "radicadoRespuesta"),
+            Map.entry("columna_14", "fechaNotificacion"),
+            Map.entry("columna_15", "tipoNotificacion"),
+            Map.entry("columna_16", "fechaTrasladoSspd")
         );
 
         // Normalizar los datos con encabezados consistentes
@@ -334,7 +359,6 @@ public class FileController {
             String grupoCausal = rowData.get("grupoCausal");
             String detalleCausalStr = rowData.get("detalleCausal");
             String accountNumber = rowData.get("niu");
-            String usuario = "admin"; // Obtén el usuario autenticado
             String accion = "MODIFICAR"; // Obtén el usuario autenticado
             String rolUsuario = "ADMIN"; // Obtén el rol del usuario
             String nombreArchivo = "formato15.xlsx"; // Nombre del archivo procesado
@@ -391,7 +415,7 @@ public class FileController {
                     if (!cuenta.getDepartamento().equals(departamentoDANE)) {
                         // Registro para cambio en Departamento DANE
                         Auditoria auditoriaDepartamento = new Auditoria();
-                        auditoriaDepartamento.setUsuario(usuario);
+                        auditoriaDepartamento.setUsuario(usuarioLogueado);
                         auditoriaDepartamento.setAccion(accion);
                         auditoriaDepartamento.setCampoModificado("Departamento DANE");
                         auditoriaDepartamento.setValorAnterior(departamentoDANEValue); // Valor original en archivo
@@ -403,7 +427,7 @@ public class FileController {
                     if (!cuenta.getMunicipio().equals(ciudadDANE)) {
                         // Registro para cambio en Ciudad DANE
                         Auditoria auditoriaMunicipio = new Auditoria();
-                        auditoriaMunicipio.setUsuario(usuario);
+                        auditoriaMunicipio.setUsuario(usuarioLogueado);
                         auditoriaMunicipio.setAccion(accion);
                         auditoriaMunicipio.setCampoModificado("Ciudad DANE");
                         auditoriaMunicipio.setValorAnterior(ciudadDANEValue); // Valor original en archivo
@@ -472,7 +496,7 @@ public class FileController {
                 if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
-                    auditoria.setUsuario(usuario);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion("Validación Fallida");
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
@@ -485,7 +509,7 @@ public class FileController {
                 } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
-                    auditoria.setUsuario(usuario);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion("Validación Fallida");
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
@@ -498,14 +522,14 @@ public class FileController {
                 }
             } catch (NumberFormatException e) {
                 // Registro de auditoría por error de formato
-                Auditoria auditoria = new Auditoria();
-                auditoria.setUsuario(usuario);
-                auditoria.setAccion("Error de Formato");
-                auditoria.setCampoModificado("Detalle Causal");
-                auditoria.setValorAnterior(detalleCausalStr);
-                auditoria.setValorNuevo("N/A");
-                auditoria.setFechaModificacion(LocalDateTime.now());
-                auditoriaRepository.save(auditoria);
+                // Auditoria auditoria = new Auditoria();
+                // auditoria.setUsuario(usuarioLogueado);
+                // auditoria.setAccion("Error de Formato");
+                // auditoria.setCampoModificado("Detalle Causal");
+                // auditoria.setValorAnterior(detalleCausalStr);
+                // auditoria.setValorNuevo("N/A");
+                // auditoria.setFechaModificacion(LocalDateTime.now());
+                // auditoriaRepository.save(auditoria);
 
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error: El valor de Detalle Causal debe ser un número entero.");
@@ -520,7 +544,7 @@ public class FileController {
                 if (fechaRespuesta != null && fechaRadicacion != null && fechaRespuesta.before(fechaRadicacion)) {
                     // Registro de auditoría por inconsistencia en fechas
                     Auditoria auditoria = new Auditoria();
-                    auditoria.setUsuario(usuario);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion("Validación Fallida");
                     auditoria.setCampoModificado("Fecha Respuesta");
                     auditoria.setValorAnterior(rowData.get("fechaRespuesta"));
@@ -534,7 +558,7 @@ public class FileController {
                 if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
                     // Registro de auditoría por inconsistencia en fechas
                     Auditoria auditoria = new Auditoria();
-                    auditoria.setUsuario(usuario);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion("Validación Fallida");
                     auditoria.setCampoModificado("Fecha Notificación");
                     auditoria.setValorAnterior(rowData.get("fechaNotificacion"));
@@ -547,14 +571,14 @@ public class FileController {
                 }
             } catch (ParseException e) {
                 // Registro de auditoría por error al analizar las fechas
-                Auditoria auditoria = new Auditoria();
-                auditoria.setUsuario(usuario);
-                auditoria.setAccion("Error de Formato");
-                auditoria.setCampoModificado("Fechas");
-                auditoria.setValorAnterior("N/A");
-                auditoria.setValorNuevo("Error en el formato de fechas");
-                auditoria.setFechaModificacion(LocalDateTime.now());
-                auditoriaRepository.save(auditoria);
+                // Auditoria auditoria = new Auditoria();
+                // auditoria.setUsuario(usuarioLogueado);
+                // auditoria.setAccion("Error de Formato");
+                // auditoria.setCampoModificado("Fechas");
+                // auditoria.setValorAnterior("N/A");
+                // auditoria.setValorNuevo("Error en el formato de fechas");
+                // auditoria.setFechaModificacion(LocalDateTime.now());
+                // auditoriaRepository.save(auditoria);
 
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
@@ -702,8 +726,30 @@ public class FileController {
 
 
     // Método auxiliar para convertir una cadena de texto a un objeto Date
-    private Date parseDate(String dateStr) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-        return dateFormat.parse(dateStr);
+    // private Date parseDate(String dateStr) throws ParseException {
+    //     SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+    //     return dateFormat.parse(dateStr);
+    // }
+
+    public Date parseDate(String dateString) throws ParseException {
+        if (dateString == null || dateString.trim().isEmpty()) {
+            return null;
+        }
+    
+        List<String> dateFormats = List.of("dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss");
+        ParseException parseException = null;
+    
+        for (String format : dateFormats) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(format);
+                sdf.setLenient(false); // Evita fechas inválidas como 31-02-2023
+                return sdf.parse(dateString);
+            } catch (ParseException e) {
+                parseException = e;
+            }
+        }
+    
+        // Si ninguno funcionó, lanza una excepción
+        throw parseException;
     }
 }
