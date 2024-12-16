@@ -119,6 +119,18 @@
 			<scope>provided</scope> <!-- Solo se usa en compilación y no en el runtime -->
 		</dependency>
 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>2.0.0</version> <!-- O la versión que estés utilizando -->
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>2.0.0</version> <!-- O la versión que estés utilizando -->
+		</dependency>
+
+
 
 	</dependencies>
 

@@ -94,15 +94,21 @@ public class FileController {
 
 
     @GetMapping("/loadFromFile")
-    public ResponseEntity<List<Map<String, String>>> loadFile() {
+    public ResponseEntity<List<Map<String, String>>> loadFile(
+            @RequestParam("year") String year,
+            @RequestParam("month") String month) {
         try {
-            List<Map<String, String>> fileData = formato15Service.readFileFromDirectory();
+            List<Map<String, String>> fileData = formato15Service.readFileFromDirectory(year, month);
             return ResponseEntity.ok(fileData);
+        } catch (FileNotFoundException e) {
+            log.warn("Archivo no encontrado para el año {} y mes {}: {}", year, month, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
         } catch (Exception e) {
             log.error("Error al cargar el archivo: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
 
 
     // @Autowired
@@ -234,60 +240,56 @@ public class FileController {
     public class AuthController {
 
         @Value("${spring.datasource.url}")
-        private String databaseUrl;
-
-        @Value("${spring.datasource.username}")
-        private String adminUser;
+        private String databaseUrl; // URL de la base de datos principal
 
         @PostMapping("/login")
         public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
             String username = request.get("usuario");
             String password = request.get("contrasena");
 
-            try (Connection connection = validateOracleUser(username, password)) {
-                if (connection != null) {
-                    // Si la conexión es exitosa, generar un token o confirmar autenticación
-                    String token = "fake-jwt-token"; // Cambiar por un token real
-                    return ResponseEntity.ok(Map.of("success", true, "token", token));
-                }
-            } catch (SQLException e) {
+            if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Usuario y contraseña son obligatorios."));
+            }
+
+            // Intenta conectar con las credenciales proporcionadas
+            if (validateOracleUser(username, password)) {
+                String token = generateFakeJwtToken(username); // Genera un token (simulado)
+                return ResponseEntity.ok(Map.of("success", true, "token", token));
+            } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("success", false, "message", "Usuario o contraseña incorrectos."));
             }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("success", false, "message", "Error al procesar la solicitud."));
         }
 
         /**
-         * Método para validar las credenciales del usuario contra la vista sys.dba_users.
+         * Valida el usuario intentando una conexión dinámica con Oracle.
          *
-         * @param username Usuario de Oracle.
+         * @param username Usuario a validar.
          * @param password Contraseña del usuario.
-         * @return Una conexión válida si el usuario y contraseña son correctos.
-         * @throws SQLException Si las credenciales son incorrectas.
+         * @return true si la conexión es exitosa; false si falla.
          */
-        private Connection validateOracleUser(String username, String password) throws SQLException {
-            // Asegúrate de usar el nombre del servicio o SID correcto
-            String userConnectionUrl = databaseUrl.replace(adminUser, username);
-
-            // Realiza la validación de usuario y contraseña en la vista sys.dba_users
-            String sql = "SELECT username FROM sys.dba_users WHERE username = ? AND password = ?";
-
-            try (Connection connection = DriverManager.getConnection(userConnectionUrl, username, password);
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, username);
-                statement.setString(2, password);
-
-                ResultSet resultSet = statement.executeQuery();
-                if (resultSet.next()) {
-                    return connection; // Si el usuario existe y la contraseña es correcta
-                }
+        private boolean validateOracleUser(String username, String password) {
+            String connectionUrl = databaseUrl; 
+            try {
+                Connection connection = DriverManager.getConnection(connectionUrl, username, password);
+                connection.close();
+                return true;
+            } catch (SQLException e) {
+                System.out.println("Error al conectar con Oracle: " + e.getMessage());
+                return false;
             }
+        }
+        
 
-            return null; // Si las credenciales no son válidas
+        /**
+         * Genera un token de prueba (reemplazar por lógica JWT real).
+         */
+        private String generateFakeJwtToken(String username) {
+            return "fake-jwt-token-" + username + "-" + System.currentTimeMillis();
         }
     }
+
 
     @Autowired
     private AuditoriaService auditoriaService;

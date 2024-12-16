@@ -72,14 +72,20 @@ public class Formato15Service {
     }
 
 
-    public List<Map<String, String>> readFileFromDirectory() throws IOException, CsvException {
-        File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
-        File[] files = directory.listFiles((dir, name) -> name.endsWith(".csv") || name.endsWith(".xls") || name.endsWith(".xlsx"));
-
+    public List<Map<String, String>> readFileFromDirectory(String year, String month) throws IOException, CsvException {
+        File directory = new File("C:/Users/usuario/Downloads/Formatos pruebas/prueba");
+        
+        // Filtrar archivos por año y mes en el nombre (formato esperado: formato_15_YYYYMM.ext)
+        String filePattern = String.format("formato_15_%s%s", year, month);
+        File[] files = directory.listFiles((dir, name) -> 
+            (name.contains(filePattern) && (name.endsWith(".csv") || name.endsWith(".xls") || name.endsWith(".xlsx")))
+        );
+    
         if (files == null || files.length == 0) {
-            throw new FileNotFoundException("No se encontró ningún archivo CSV/XLS en la ruta especificada.");
+            throw new FileNotFoundException("No se encontró ningún archivo correspondiente al patrón: " + filePattern);
         }
-
+    
+        // Leer el primer archivo encontrado
         File file = files[0];
         if (file.getName().endsWith(".csv")) {
             return readCSVFile(file);
@@ -87,32 +93,36 @@ public class Formato15Service {
             return readExcelFile(file);
         }
     }
+    
 
     private List<Map<String, String>> readCSVFile(File file) throws IOException, CsvException {
         List<Map<String, String>> data = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(new FileReader(file))) {
-            List<String[]> rows = csvReader.readAll();
-            String[] headers = rows.get(0); // Encabezados de la primera fila
+            List<String[]> rows = csvReader.readAll(); // Leer todas las filas del archivo
     
-            for (int i = 1; i < rows.size(); i++) {
+            for (int i = 0; i < rows.size(); i++) { // Iterar desde la primera fila
                 String[] row = rows.get(i);
-                Map<String, String> rowData = new LinkedHashMap<>(); // Usar LinkedHashMap para mantener el orden
-                for (int j = 0; j < headers.length; j++) {
+                Map<String, String> rowData = new LinkedHashMap<>(); // Mantener el orden de las columnas
+    
+                for (int j = 0; j < row.length; j++) {
+                    String columnName = "columna_" + (j + 1); // Generar nombre de columna dinámico
                     String value = row[j];
     
-                    // Validar y convertir fechas
+                    // Validar y convertir fechas si es necesario
                     if (isDate(value)) {
-                        value = formatDate(value); // Convertir al formato dd-MM-yyyy
+                        value = formatDate(value);
                     }
     
-                    // Si es un número decimal, convertir a entero
-                    rowData.put(headers[j], isNumeric(value) && value.contains(".") ? formatAsInteger(value) : value);
+                    // Convertir números decimales a enteros si aplica
+                    rowData.put(columnName, isNumeric(value) && value.contains(".") ? formatAsInteger(value) : value);
                 }
-                data.add(rowData);
+    
+                data.add(rowData); // Agregar la fila completa
             }
         }
-        return data;
+        return data; // Devolver la lista completa de filas
     }
+    
     
     private List<Map<String, String>> readExcelFile(File file) throws IOException {
         List<Map<String, String>> data = new ArrayList<>();
@@ -183,7 +193,7 @@ public class Formato15Service {
     private String formatDate(String value) {
         try {
             // Detectar el formato actual de la fecha
-            String[] possibleFormats = { "dd-MM-yyyy HH:mm", "dd-MM-yy HH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy" };
+            String[] possibleFormats = { "dd-MM-yyyy HH:mm:ss", "dd-MM-yy HH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss"  };
             Date date = null;
             for (String format : possibleFormats) {
                 try {
