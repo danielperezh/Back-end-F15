@@ -144,104 +144,11 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
-
-
-
-    @Autowired
-    private DataService dataService;
     
 
     @Autowired
     private CuentaService cuentaService;
     
-
-    // @RestController
-    // @RequestMapping("/api/auth")
-    // public class AuthController {
-
-    //     @Autowired
-    //     private UsuarioRepositorio usuarioRepositorio;
-
-    //     @PostMapping("/login")
-    //     public ResponseEntity<?> login(@RequestBody Usuario request) {
-    //         String username = request.getUsuario();
-    //         String password = request.getContrasena();
-
-    //         Optional<Usuario> usuarioOptional = usuarioRepositorio.findByUsuario(username);
-
-    //         if (usuarioOptional.isPresent()) {
-    //             Usuario usuario = usuarioOptional.get();
-
-    //             if (password.equals(usuario.getContrasena())) {
-    //                 //System.out.println("Autenticación exitosa. Generando token...");
-    //                 String token = "fake-jwt-token"; // Cambiar por un token real
-    //                 return ResponseEntity.ok(Map.of("success", true, "token", token));
-    //             } else {
-    //                 System.out.println("Contraseña incorrecta.");
-    //                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    //                         .body(Map.of("success", false, "message", "Contraseña incorrecta."));
-    //             }
-    //         } else {
-    //             System.out.println("Usuario no encontrado: " + username);
-    //             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    //                     .body(Map.of("success", false, "message", "Usuario no encontrado."));
-    //         }
-    //     }
-
-    // }
-
-    // @RestController
-    // @RequestMapping("/api/auth")
-    // public class AuthController {
-
-    //     // URL de conexión a la base de datos (debe incluir el host, puerto y SID/servicio)
-    //     @Value("${spring.datasource.url}")
-    //     private String databaseUrl;
-
-    //     // Credenciales administrativas para conectar a la base de datos en caso de necesitar validaciones adicionales
-    //     @Value("${spring.datasource.username}")
-    //     private String adminUser;
-
-    //     // @Value("${spring.datasource.password}")
-    //     // private String adminPassword;
-
-    //     @PostMapping("/login")
-    //     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-            
-    //         String username = request.get("usuario");
-    //         String password = request.get("contrasena");
-
-    //         try (Connection connection = validateOracleUser(username, password)) {
-    //             // Si la conexión es exitosa, generar un token o confirmar autenticación
-    //             if (connection != null) {
-    //                 // Aquí podrías generar un JWT o responder con éxito
-    //                 String token = "fake-jwt-token"; // Cambiar por un token real
-    //                 return ResponseEntity.ok(Map.of("success", true, "token", token));
-    //             }
-    //         } catch (SQLException e) {
-    //             log.error("Error de conexión: " + e.getMessage(), e); // Registra el error de SQL
-    //             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-    //                     .body(Map.of("success", false, "message", "Usuario o contraseña incorrectos."));
-    //         }            
-
-    //         // Si algo falla, retornar error genérico
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(Map.of("success", false, "message", "Error al procesar la solicitud."));
-    //     }
-
-    //     /**
-    //      * Método para validar las credenciales del usuario contra Oracle.
-    //      *
-    //      * @param username Usuario de Oracle.
-    //      * @param password Contraseña del usuario.
-    //      * @return Una conexión válida si el usuario y contraseña son correctos.
-    //      * @throws SQLException Si las credenciales son incorrectas.
-    //      */
-    //     private Connection validateOracleUser(String username, String password) throws SQLException {
-    //         String userConnectionUrl = databaseUrl.replace(adminUser, username); // Cambiar el usuario en la URL
-    //         return DriverManager.getConnection(userConnectionUrl, username, password); // Intentar conexión
-    //     }
-    // }
 
     @CrossOrigin(origins = "http://localhost:8080")
     @RestController
@@ -302,22 +209,8 @@ public class FileController {
         }
     }
 
-
-    @Autowired
-    private AuditoriaService auditoriaService;
-
     @Autowired
     private AuditoriaFormato15Repository auditoriaRepository;
-
-    public ResponseEntity<String> obtenerUsuarioLogueado() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || "anonymousUser".equals(authentication.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("El usuario no está autenticado.");
-        }
-        String usuarioLogueado = authentication.getName(); // Nombre de usuario obtenido del JWT
-        return ResponseEntity.ok("Usuario logueado: " + usuarioLogueado);
-    }
 
 
     @PostMapping("/validateAndSaveFile")

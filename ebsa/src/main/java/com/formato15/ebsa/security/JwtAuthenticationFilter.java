@@ -1,4 +1,4 @@
-package com.formato15.ebsa.seguridad;
+package com.formato15.ebsa.security;
 
 public class JwtAuthenticationFilter {
     
