@@ -22,6 +22,9 @@ import com.formato15.ebsa.service.CuentaService;
 import com.formato15.ebsa.service.DataService;
 import com.formato15.ebsa.service.Formato15Service;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
@@ -30,6 +33,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javax.crypto.SecretKey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -244,7 +249,13 @@ public class FileController {
     public class AuthController {
 
         @Value("${spring.datasource.url}")
-        private String databaseUrl; // URL de la base de datos principal
+        private String databaseUrl;
+
+        @Value("${jwt.secret}")
+        private String jwtSecret;
+
+        @Value("${jwt.expiration}")
+        private long jwtExpiration; // Duración en segundos
 
         @PostMapping("/login")
         public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
@@ -256,9 +267,8 @@ public class FileController {
                         .body(Map.of("success", false, "message", "Usuario y contraseña son obligatorios."));
             }
 
-            // Intenta conectar con las credenciales proporcionadas
             if (validateOracleUser(username, password)) {
-                String token = generateFakeJwtToken(username); // Genera un token (simulado)
+                String token = generateJwtToken(username);
                 return ResponseEntity.ok(Map.of("success", true, "token", token));
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -266,17 +276,9 @@ public class FileController {
             }
         }
 
-        /**
-         * Valida el usuario intentando una conexión dinámica con Oracle.
-         *
-         * @param username Usuario a validar.
-         * @param password Contraseña del usuario.
-         * @return true si la conexión es exitosa; false si falla.
-         */
         private boolean validateOracleUser(String username, String password) {
-            String connectionUrl = databaseUrl; 
             try {
-                Connection connection = DriverManager.getConnection(connectionUrl, username, password);
+                Connection connection = DriverManager.getConnection(databaseUrl, username, password);
                 connection.close();
                 return true;
             } catch (SQLException e) {
@@ -284,13 +286,19 @@ public class FileController {
                 return false;
             }
         }
-        
 
-        /**
-         * Genera un token de prueba (reemplazar por lógica JWT real).
-         */
-        private String generateFakeJwtToken(String username) {
-            return "fake-jwt-token-" + username + "-" + System.currentTimeMillis();
+        private String generateJwtToken(String username) {
+            // Generar una clave secreta
+            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+
+            // Crear el token JWT
+            return Jwts.builder()
+                    .setSubject(username)
+                    .claim("nombre", username)
+                    .setIssuedAt(new Date()) // Fecha de emisión
+                    .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration * 1000)) // Expiración
+                    .signWith(key, SignatureAlgorithm.HS256) // Firma con la clave secreta
+                    .compact();
         }
     }
 
