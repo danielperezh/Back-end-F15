@@ -218,7 +218,8 @@ public class FileController {
 
          // Obtener el usuario logueado
          Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-         if (authentication == null || "anonymousUser".equals(authentication.getName())) {
+         //if (authentication == null || "anonymousUser".equals(authentication.getName())) {
+         if (authentication == null) {
              return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                      .body("El usuario no está autenticado.");
          }
@@ -398,7 +399,7 @@ public class FileController {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
                     auditoria.setUsuario(usuarioLogueado);
-                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setAccion(accion);
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
                     auditoria.setValorNuevo(rowData.get("fechaRespuesta")); // No se modifica el valor, solo se registra el error
@@ -411,7 +412,7 @@ public class FileController {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
                     auditoria.setUsuario(usuarioLogueado);
-                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setAccion(accion);
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
                     auditoria.setValorNuevo("N/A");
@@ -422,15 +423,6 @@ public class FileController {
                             .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
                 }
             } catch (NumberFormatException e) {
-                // Registro de auditoría por error de formato
-                // Auditoria auditoria = new Auditoria();
-                // auditoria.setUsuario(usuarioLogueado);
-                // auditoria.setAccion("Error de Formato");
-                // auditoria.setCampoModificado("Detalle Causal");
-                // auditoria.setValorAnterior(detalleCausalStr);
-                // auditoria.setValorNuevo("N/A");
-                // auditoria.setFechaModificacion(LocalDateTime.now());
-                // auditoriaRepository.save(auditoria);
 
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error: El valor de Detalle Causal debe ser un número entero.");
@@ -446,7 +438,7 @@ public class FileController {
                     // Registro de auditoría por inconsistencia en fechas
                     Auditoria auditoria = new Auditoria();
                     auditoria.setUsuario(usuarioLogueado);
-                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setAccion("Modificación Fecha");
                     auditoria.setCampoModificado("Fecha Respuesta");
                     auditoria.setValorAnterior(rowData.get("fechaRespuesta"));
                     auditoria.setValorNuevo("Debe ser mayor o igual a " + rowData.get("fechaReclamacion"));
@@ -460,7 +452,7 @@ public class FileController {
                     // Registro de auditoría por inconsistencia en fechas
                     Auditoria auditoria = new Auditoria();
                     auditoria.setUsuario(usuarioLogueado);
-                    auditoria.setAccion("Validación Fallida");
+                    auditoria.setAccion("Modificación Fecha");
                     auditoria.setCampoModificado("Fecha Notificación");
                     auditoria.setValorAnterior(rowData.get("fechaNotificacion"));
                     auditoria.setValorNuevo("Debe ser mayor o igual a " + rowData.get("fechaRespuesta"));
@@ -471,15 +463,6 @@ public class FileController {
                             .body("La fecha de notificación debe ser mayor o igual a la fecha de respuesta.");
                 }
             } catch (ParseException e) {
-                // Registro de auditoría por error al analizar las fechas
-                // Auditoria auditoria = new Auditoria();
-                // auditoria.setUsuario(usuarioLogueado);
-                // auditoria.setAccion("Error de Formato");
-                // auditoria.setCampoModificado("Fechas");
-                // auditoria.setValorAnterior("N/A");
-                // auditoria.setValorNuevo("Error en el formato de fechas");
-                // auditoria.setFechaModificacion(LocalDateTime.now());
-                // auditoriaRepository.save(auditoria);
 
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");

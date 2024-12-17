@@ -25,8 +25,8 @@ public class Auditoria {
     @Column(name = "usuario", nullable = false)
     private String usuario;
 
-    @Column(name = "rol_usuario")
-    private String rolUsuario;
+    // @Column(name = "rol_usuario")
+    // private String rolUsuario;
 
     @Column(name = "nombre_archivo")
     private String nombreArchivo;

@@ -16,7 +16,7 @@ public class AuditoriaService {
                                  String campoModificado, String valorAnterior, String valorNuevo) {
         Auditoria auditoria = new Auditoria();
         auditoria.setUsuario(usuario);
-        auditoria.setRolUsuario(rolUsuario);
+        // auditoria.setRolUsuario(rolUsuario);
         auditoria.setNombreArchivo(nombreArchivo);
         auditoria.setAccion(accion);
         auditoria.setCampoModificado(campoModificado);
