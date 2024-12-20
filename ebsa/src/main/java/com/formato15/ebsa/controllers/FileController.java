@@ -216,14 +216,22 @@ public class FileController {
     @PostMapping("/validateAndSaveFile")
     public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData, @RequestParam(required = false, defaultValue = "json") String returnType) {
 
-         // Obtener el usuario logueado
-         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-         //if (authentication == null || "anonymousUser".equals(authentication.getName())) {
-         if (authentication == null) {
-             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                     .body("El usuario no está autenticado.");
-         }
-         String usuarioLogueado = authentication.getName();
+        // Obtener el usuario autenticado
+        String usuarioLogueado;
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+                usuarioLogueado = authentication.getName(); // Nombre del usuario logueado
+            } else {
+                usuarioLogueado = "UsuarioDesconocido";
+            }
+        } catch (Exception e) {
+            usuarioLogueado = "UsuarioDesconocido";
+            log.error("Error al obtener el usuario autenticado: ", e);
+        }
+
+        // Log para verificar el usuario obtenido
+        log.info("Usuario autenticado: {}", usuarioLogueado);
          
          
 
@@ -441,7 +449,7 @@ public class FileController {
                     auditoria.setAccion("Modificación Fecha");
                     auditoria.setCampoModificado("Fecha Respuesta");
                     auditoria.setValorAnterior(rowData.get("fechaRespuesta"));
-                    auditoria.setValorNuevo("Debe ser mayor o igual a " + rowData.get("fechaReclamacion"));
+                    auditoria.setValorNuevo(rowData.get("fechaRespuesta"));
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
@@ -455,7 +463,7 @@ public class FileController {
                     auditoria.setAccion("Modificación Fecha");
                     auditoria.setCampoModificado("Fecha Notificación");
                     auditoria.setValorAnterior(rowData.get("fechaNotificacion"));
-                    auditoria.setValorNuevo("Debe ser mayor o igual a " + rowData.get("fechaRespuesta"));
+                    auditoria.setValorNuevo(rowData.get("fechaNotificacion"));
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
