@@ -14,33 +14,33 @@ public class DatosController {
     @Autowired
     private AuditoriaService auditoriaService;
 
-    @PostMapping("/guardar")
-    public String guardarDatos(@RequestBody Map<String, Object> datosModificados) {
-        // Simula los datos originales (pueden provenir de la base de datos)
-        Map<String, Object> datosOriginales = obtenerDatosOriginales();
+    // @PostMapping("/guardar")
+    // public String guardarDatos(@RequestBody Map<String, Object> datosModificados) {
+    //     // Simula los datos originales (pueden provenir de la base de datos)
+    //     Map<String, Object> datosOriginales = obtenerDatosOriginales();
 
-        String usuario = "admin"; // Usuario autenticado
-        String rolUsuario = "ADMIN";
-        String nombreArchivo = "formato15.xlsx";
-        String accion = "MODIFICAR";
+    //     String usuario = "admin"; // Usuario autenticado
+    //     String rolUsuario = "ADMIN";
+    //     String nombreArchivo = "formato15.xlsx";
+    //     String accion = "MODIFICAR";
 
-        // Detectar cambios
-        for (String campo : datosModificados.keySet()) {
-            Object valorNuevo = datosModificados.get(campo);
-            Object valorAnterior = datosOriginales.get(campo);
+    //     // Detectar cambios
+    //     for (String campo : datosModificados.keySet()) {
+    //         Object valorNuevo = datosModificados.get(campo);
+    //         Object valorAnterior = datosOriginales.get(campo);
 
-            // Comparar valores
-            if (valorAnterior != null && !valorAnterior.equals(valorNuevo)) {
-                // Registrar auditoría
-                auditoriaService.registrarCambio(usuario, rolUsuario, nombreArchivo, accion,
-                        campo, valorAnterior.toString(), valorNuevo.toString());
-            }
-        }
+    //         // Comparar valores
+    //         if (valorAnterior != null && !valorAnterior.equals(valorNuevo)) {
+    //             // Registrar auditoría
+    //             auditoriaService.registrarCambio(usuario, nombreArchivo, accion,
+    //                     campo, valorAnterior.toString(), valorNuevo.toString());
+    //         }
+    //     }
 
-        // Aquí guardarías los datos modificados en la base de datos
+    //     // Aquí guardarías los datos modificados en la base de datos
 
-        return "Datos guardados y auditoría registrada.";
-    }
+    //     return "Datos guardados y auditoría registrada.";
+    // }
 
     private Map<String, Object> obtenerDatosOriginales() {
         // Simulación de datos originales (deberías consultarlos desde la base de datos)

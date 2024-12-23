@@ -11,17 +11,17 @@ public class Usuario {
     private String id; // Cambiado de long a String
 
     @Column(name = "username", nullable = false, unique = true)
-    private String usuario;
+    private String username;
 
     @Column(name = "password", nullable = false)
     private String contrasena;
 
     public String getUsuario() {
-        return usuario;
+        return username;
     }
 
-    public void setUsuario(String usuario) {
-        this.usuario = usuario;
+    public void setUsuario(String username) {
+        this.username = username;
     }
 
     public String getContrasena() {
