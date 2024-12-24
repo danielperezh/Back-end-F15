@@ -1,8 +1,6 @@
 package com.formato15.ebsa.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.formato15.ebsa.clases.Auditoria;
@@ -19,8 +17,7 @@ public class AuditoriaService {
     /**
      * Método para registrar un cambio en la auditoría.
      */
-    public void registrarCambio(String accion, String campoModificado, String valorAnterior, String valorNuevo) {
-        String usuarioLogueado = obtenerUsuarioLogueado();
+    public void registrarCambio(String usuarioLogueado,String accion, String campoModificado, String valorAnterior, String valorNuevo) {
 
         Auditoria auditoria = new Auditoria();
         auditoria.setUsuario(usuarioLogueado);
@@ -32,36 +29,5 @@ public class AuditoriaService {
 
         auditoriaRepository.save(auditoria);
     }
-
-    /**
-     * Método para obtener el usuario logueado desde el contexto de seguridad.
-     */
-    // private String obtenerUsuarioLogueado() {
-    //     Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    //     if (principal instanceof UserDetails) {
-    //         return ((UserDetails) principal).getUsername();
-    //     } else {
-    //         return principal.toString();
-    //     }
-    // }
-
-    private String obtenerUsuarioLogueado() {
-        // Obtener el objeto principal del contexto de seguridad
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        
-        // Imprimir el tipo y contenido del principal para depuración
-        System.out.println("Objeto principal obtenido del contexto de seguridad: " + principal);
-        System.out.println("Tipo del objeto principal: " + principal.getClass().getName());
-    
-        // Verificar si el principal es una instancia de UserDetails
-        if (principal instanceof UserDetails) {
-            String username = ((UserDetails) principal).getUsername();
-            System.out.println("Usuario logueado identificado como: " + username);
-            return username;
-        } else {
-            System.out.println("El usuario logueado no es una instancia de UserDetails, retornando: " + principal.toString());
-            return principal.toString();
-        }
-    }
-    
+   
 }

@@ -121,10 +121,6 @@ public class FileController {
     }
 
 
-
-    // @Autowired
-    // private Formato15Service formato15Service;
-
     @GetMapping("/findFullInformation")
     public ResponseEntity<?> findFullInformation(
             @RequestParam("ano") Integer ano,
@@ -240,15 +236,11 @@ public class FileController {
     @PostMapping("/validateAndSaveFile")
     public ResponseEntity<?> validateAndSaveFile(@RequestBody List<Map<String, String>> editedData, @RequestParam(required = false, defaultValue = "json") String returnType) {
 
-        // Obtener el usuario autenticado
-        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // String usuarioLogueado = (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName()))
-        //         ? authentication.getName()
-        //         : "UsuarioDesconocido";
+        //Obtener el usuario autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String usuarioLogueado = authentication != null ? authentication.getName() : "UsuarioDesconocido";
 
-
-        // // Log para verificar el usuario obtenido
-        // log.info("Usuario autenticado: {}", usuarioLogueado);
+        System.out.println("-- Usuario --: " + usuarioLogueado);
          
          
 
@@ -341,55 +333,39 @@ public class FileController {
             if (!cuenta.getDepartamento().equals(departamentoDANE) || !cuenta.getMunicipio().equals(ciudadDANE)) {
                 // Insertar registro en la tabla de auditoría
             
-                // Registro de cambio en Departamento DANE
-                if (!cuenta.getDepartamento().equals(departamentoDANE)) {
-                    String valorAnterior = departamentoDANEValue; // Valor original en el archivo
-                    String valorNuevo = String.valueOf(cuenta.getDepartamento()); // Nuevo valor en la BD
-                    auditoriaService.registrarCambio(accion, "Departamento DANE", valorAnterior, valorNuevo);
-                }
-            
-                // Registro de cambio en Ciudad DANE
-                if (!cuenta.getMunicipio().equals(ciudadDANE)) {
-                    String valorAnterior = ciudadDANEValue; // Valor original en el archivo
-                    String valorNuevo = String.valueOf(cuenta.getMunicipio()); // Nuevo valor en la BD
-                    auditoriaService.registrarCambio(accion, "Ciudad DANE", valorAnterior, valorNuevo);
-                }
-            
-                // Registro informativo si no hubo cambios
-                if (cuenta.getDepartamento().equals(departamentoDANE) && cuenta.getMunicipio().equals(ciudadDANE)) {
-                    log.info(String.format("No hubo cambios en Departamento (%s) ni Ciudad (%s) para la cuenta %s.",
-                            departamentoDANE, ciudadDANE, accountNumber));
-                }
+                
 
-                    // if (!cuenta.getDepartamento().equals(departamentoDANE)) {
-                    //     // Registro para cambio en Departamento DANE
-                    //     Auditoria auditoriaDepartamento = new Auditoria();
-                    //     // auditoriaDepartamento.setUsuario(usuarioLogueado);
-                    //     auditoriaDepartamento.setAccion(accion);
-                    //     auditoriaDepartamento.setCampoModificado("Departamento DANE");
-                    //     auditoriaDepartamento.setValorAnterior(departamentoDANEValue); // Valor original en archivo
-                    //     auditoriaDepartamento.setValorNuevo(String.valueOf(cuenta.getDepartamento())); // Nuevo valor en la base de datos
-                    //     auditoriaDepartamento.setFechaModificacion(LocalDateTime.now());
-                    //     auditoriaRepository.save(auditoriaDepartamento);
-                    // }
+                    if (!cuenta.getDepartamento().equals(departamentoDANE)) {
+                        // Registro para cambio en Departamento DANE
+                        Auditoria auditoriaDepartamento = new Auditoria();
+                        auditoriaDepartamento.setUsuario(usuarioLogueado);
+                        auditoriaDepartamento.setAccion(accion);
+                        auditoriaDepartamento.setCampoModificado("Departamento DANE");
+                        auditoriaDepartamento.setValorAnterior(departamentoDANEValue); // Valor original en archivo
+                        auditoriaDepartamento.setValorNuevo(String.valueOf(cuenta.getDepartamento())); // Nuevo valor en la base de datos
+                        auditoriaDepartamento.setFechaModificacion(LocalDateTime.now());
+                        System.out.println("-- Usuario --: " + usuarioLogueado);
+                        auditoriaRepository.save(auditoriaDepartamento);
+                    }
                     
-                    // if (!cuenta.getMunicipio().equals(ciudadDANE)) {
-                    //     // Registro para cambio en Ciudad DANE
-                    //     Auditoria auditoriaMunicipio = new Auditoria();
-                    //     // auditoriaMunicipio.setUsuario(usuarioLogueado);
-                    //     auditoriaMunicipio.setAccion(accion);
-                    //     auditoriaMunicipio.setCampoModificado("Ciudad DANE");
-                    //     auditoriaMunicipio.setValorAnterior(ciudadDANEValue); // Valor original en archivo
-                    //     auditoriaMunicipio.setValorNuevo(String.valueOf(cuenta.getMunicipio()));
-                    //     auditoriaMunicipio.setFechaModificacion(LocalDateTime.now());
-                    //     auditoriaRepository.save(auditoriaMunicipio);
-                    // }
+                    if (!cuenta.getMunicipio().equals(ciudadDANE)) {
+                        // Registro para cambio en Ciudad DANE
+                        Auditoria auditoriaMunicipio = new Auditoria();
+                        auditoriaMunicipio.setUsuario(usuarioLogueado);
+                        auditoriaMunicipio.setAccion(accion);
+                        auditoriaMunicipio.setCampoModificado("Ciudad DANE");
+                        auditoriaMunicipio.setValorAnterior(ciudadDANEValue); // Valor original en archivo
+                        auditoriaMunicipio.setValorNuevo(String.valueOf(cuenta.getMunicipio()));
+                        auditoriaMunicipio.setFechaModificacion(LocalDateTime.now());
+                        System.out.println("-- Usuario --: " + usuarioLogueado);
+                        auditoriaRepository.save(auditoriaMunicipio);
+                    }
                     
-                    // // Si ninguno de los dos campos se modifica, puedes registrar un log informativo o simplemente omitir la auditoría.
-                    // if (cuenta.getDepartamento().equals(departamentoDANE) && cuenta.getMunicipio().equals(ciudadDANE)) {
-                    //     log.info(String.format("No hubo cambios en Departamento (%s) ni Ciudad (%s) para la cuenta %s.",
-                    //             departamentoDANE, ciudadDANE, accountNumber));
-                    // }
+                    // Si ninguno de los dos campos se modifica, puedes registrar un log informativo o simplemente omitir la auditoría.
+                    if (cuenta.getDepartamento().equals(departamentoDANE) && cuenta.getMunicipio().equals(ciudadDANE)) {
+                        log.info(String.format("No hubo cambios en Departamento (%s) ni Ciudad (%s) para la cuenta %s.",
+                                departamentoDANE, ciudadDANE, accountNumber));
+                    }
                 }
             } else {
                 // Manejo de error si no se encuentra la cuenta
@@ -445,7 +421,7 @@ public class FileController {
                 if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
-                    // auditoria.setUsuario(usuarioLogueado);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion(accion);
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
@@ -458,7 +434,7 @@ public class FileController {
                 } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
-                    // auditoria.setUsuario(usuarioLogueado);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion(accion);
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
@@ -484,7 +460,7 @@ public class FileController {
                 if (fechaRespuesta != null && fechaRadicacion != null && fechaRespuesta.before(fechaRadicacion)) {
                     // Registro de auditoría por inconsistencia en fechas
                     Auditoria auditoria = new Auditoria();
-                    // auditoria.setUsuario(usuarioLogueado);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion("Modificación Fecha");
                     auditoria.setCampoModificado("Fecha Respuesta");
                     auditoria.setValorAnterior(rowData.get("fechaRespuesta"));
@@ -498,7 +474,7 @@ public class FileController {
                 if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
                     // Registro de auditoría por inconsistencia en fechas
                     Auditoria auditoria = new Auditoria();
-                    // auditoria.setUsuario(usuarioLogueado);
+                    auditoria.setUsuario(usuarioLogueado);
                     auditoria.setAccion("Modificación Fecha");
                     auditoria.setCampoModificado("Fecha Notificación");
                     auditoria.setValorAnterior(rowData.get("fechaNotificacion"));

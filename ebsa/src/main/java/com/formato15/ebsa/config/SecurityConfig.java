@@ -33,7 +33,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").authenticated() // Requiere autenticación
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Agrega el filtro JWT
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);// Agrega el filtro JWT
+            
 
         return http.build();
     }
