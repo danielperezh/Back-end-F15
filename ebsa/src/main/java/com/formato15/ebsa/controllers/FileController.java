@@ -279,8 +279,8 @@ public class FileController {
             String detalleCausalStr = rowData.get("detalleCausal");
             String accountNumber = rowData.get("niu");
             String accion = "MODIFICAR"; // Obtén el usuario autenticado
-            String rolUsuario = "ADMIN"; // Obtén el rol del usuario
             String nombreArchivo = "formato15.xlsx"; // Nombre del archivo procesado
+            Integer rowIndex = 0;
 
 
             // Validar que accountNumber no sea nulo
@@ -425,7 +425,7 @@ public class FileController {
                     auditoria.setAccion(accion);
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
-                    auditoria.setValorNuevo(rowData.get("fechaRespuesta")); // No se modifica el valor, solo se registra el error
+                    auditoria.setValorNuevo(rowData.get("detalleCausal")); // No se modifica el valor, solo se registra el error
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
@@ -438,7 +438,7 @@ public class FileController {
                     auditoria.setAccion(accion);
                     auditoria.setCampoModificado("Detalle Causal");
                     auditoria.setValorAnterior(detalleCausalStr);
-                    auditoria.setValorNuevo("N/A");
+                    auditoria.setValorNuevo(rowData.get("detalleCausal"));
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
@@ -468,8 +468,14 @@ public class FileController {
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
+                     // Agregar fila y columna al mensaje de error
+                    String errorMessage = String.format(
+                        "Error en la fila %d, columna 'Fecha Respuesta': La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.",
+                        rowIndex + 1  // rowIndex + 1 para el consecutivo de fila
+                    );
+
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.");
+                            .body(errorMessage);
                 }
                 if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
                     // Registro de auditoría por inconsistencia en fechas
@@ -482,8 +488,13 @@ public class FileController {
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
+                    String errorMessage = String.format(
+                        "Error en la fila %d, columna 'Fecha Notificación': La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.",
+                        rowIndex + 1  // rowIndex + 1 para el consecutivo de fila
+                    );
+
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("La fecha de notificación debe ser mayor o igual a la fecha de respuesta.");
+                            .body(errorMessage);
                 }
             } catch (ParseException e) {
 
