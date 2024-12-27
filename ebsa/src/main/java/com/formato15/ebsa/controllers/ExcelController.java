@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/excel")
 public class ExcelController {
 
-    @CrossOrigin(origins = "http://localhost:8080") // Habilitar CORS solo para este endpoint.
+    @CrossOrigin(origins = "http://formato15.ebsa.com.co:8080") // Habilitar CORS solo para este endpoint.
     @PostMapping("/upload")
     public ResponseEntity<?> uploadExcelFiles(@RequestParam("files") MultipartFile[] files) {
         // Lógica de la subida y unión de archivos Excel.

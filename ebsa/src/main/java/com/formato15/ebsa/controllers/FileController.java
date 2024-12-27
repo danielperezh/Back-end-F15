@@ -149,7 +149,7 @@ public class FileController {
     private CuentaService cuentaService;
     
 
-    @CrossOrigin(origins = "http://localhost:8080")
+    @CrossOrigin(origins = "http://formato15.ebsa.com.co:8080")
     @RestController
     @RequestMapping("/api/auth")
     public class AuthController {
@@ -272,7 +272,10 @@ public class FileController {
         this.savedData = new ArrayList<>(normalizedData);
 
         // Validación de datos
+
+        int rowIndex = 0; // Índice para las filas
         for (Map<String, String> rowData : savedData) {
+            rowIndex++;
             String departamentoDANEValue = rowData.get("daneDpto");
             String ciudadDANEValue = rowData.get("daneMpio");
             String grupoCausal = rowData.get("grupoCausal");
@@ -280,7 +283,6 @@ public class FileController {
             String accountNumber = rowData.get("niu");
             String accion = "MODIFICAR"; // Obtén el usuario autenticado
             String nombreArchivo = "formato15.xlsx"; // Nombre del archivo procesado
-            Integer rowIndex = 0;
 
 
             // Validar que accountNumber no sea nulo
@@ -292,27 +294,34 @@ public class FileController {
             // Obtener los primeros 6 dígitos del número de cuenta
             Long matricula;
             try {
-                matricula = Long.parseLong(accountNumber.substring(0, 6)); // Asumiendo que es un Long
+                matricula = Long.parseLong(accountNumber.substring(0, 6));
             } catch (NumberFormatException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("El número de cuenta debe ser numérico y tener al menos 6 dígitos.");
+                String errorMessage = String.format("Error en la fila %d, columna 'Número de Cuenta': El número de cuenta debe ser numérico y tener al menos 6 dígitos.", rowIndex);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
             }
 
             Integer departamentoDANE;
             Integer ciudadDANE;
+            // try {
+            //     departamentoDANE = Integer.parseInt(departamentoDANEValue); // Asumiendo que es un Integer
+            //     ciudadDANE = Integer.parseInt(ciudadDANEValue); // Asumiendo que es un Integer
+            // } catch (NumberFormatException e) {
+            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            //             .body("El código del departamento y el código de la ciudad deben ser numéricos.");
+            // }
             try {
-                departamentoDANE = Integer.parseInt(departamentoDANEValue); // Asumiendo que es un Integer
-                ciudadDANE = Integer.parseInt(ciudadDANEValue); // Asumiendo que es un Integer
+                departamentoDANE = Integer.parseInt(departamentoDANEValue);
+                ciudadDANE = Integer.parseInt(ciudadDANEValue);
             } catch (NumberFormatException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("El código del departamento y el código de la ciudad deben ser numéricos.");
+                String errorMessage = String.format("Error en la fila %d: Los valores de 'Departamento DANE' o 'Ciudad DANE' deben ser numéricos.", rowIndex);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
             }
 
 
             // Validar Departamento y Ciudad
             if (departamentoDANEValue == null || "0".equals(departamentoDANEValue)) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("El código del departamento no puede ser nulo o igual a 0.");
+                String errorMessage = String.format("Error en la fila %d, columna 'Departamento DANE': El código del departamento no puede ser nulo o igual a 0.", rowIndex);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
             }
             // if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
             //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -382,8 +391,6 @@ public class FileController {
                     // Corregir los valores en rowData
                     rowData.put("daneDpto", String.valueOf(cuenta.getDepartamento()));
                     rowData.put("daneMpio", String.valueOf(cuenta.getMunicipio()));
-                    // Comparar datos originales con los modificados
-                    //compareAndAudit(rowData, cuenta, accountNumber);
 
                     // Registrar un mensaje de advertencia en los logs
                     log.warn(String.format(
@@ -469,13 +476,12 @@ public class FileController {
                     auditoriaRepository.save(auditoria);
 
                      // Agregar fila y columna al mensaje de error
-                    String errorMessage = String.format(
-                        "Error en la fila %d, columna 'Fecha Respuesta': La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.",
-                        rowIndex + 1  // rowIndex + 1 para el consecutivo de fila
+                     String errorMessage = String.format(
+                        "Error en la fila <b>%d</b>, columna '<b>Fecha Respuesta</b>': La fecha de respuesta debe ser mayor o igual a la fecha de radicación.",
+                        rowIndex
                     );
 
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(errorMessage);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
                 }
                 if (fechaNotificacion != null && fechaRespuesta != null && fechaNotificacion.before(fechaRespuesta)) {
                     // Registro de auditoría por inconsistencia en fechas
@@ -489,17 +495,16 @@ public class FileController {
                     auditoriaRepository.save(auditoria);
 
                     String errorMessage = String.format(
-                        "Error en la fila %d, columna 'Fecha Notificación': La fecha de respuesta debe ser mayor o igual a la fecha y hora de radicación.",
-                        rowIndex + 1  // rowIndex + 1 para el consecutivo de fila
+                    "Error en la fila <b>%d</b>, columna <b>'Fecha Notificación'</b>: La fecha de notificación debe ser mayor o igual a la fecha de respuesta.",
+                    rowIndex
                     );
-
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(errorMessage);
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
                 }
             } catch (ParseException e) {
 
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Error al analizar las fechas. Asegúrese de que el formato de fecha sea correcto.");
+                String errorMessage = String.format("Error en la fila %d: Formato de fecha incorrecto.", rowIndex);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+                
             }
 
             // Validación de fechas
@@ -542,7 +547,7 @@ public class FileController {
                 cell.setCellValue(key);
             }
 
-            int rowIndex = 1;
+            // int rowIndex = 1;
             for (Map<String, String> rowData : savedData) {
                 Row row = sheet.createRow(rowIndex++);
                 cellIndex = 0;
