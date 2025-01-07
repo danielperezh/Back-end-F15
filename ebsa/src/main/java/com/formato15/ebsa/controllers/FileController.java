@@ -149,7 +149,8 @@ public class FileController {
     private CuentaService cuentaService;
     
 
-    @CrossOrigin(origins = "http://formato15.ebsa.com.co:8080")
+    //@CrossOrigin(origins = "http://formato15.ebsa.com.co:8080")
+    @CrossOrigin(origins = "http://localhost:8080")
     @RestController
     @RequestMapping("/api/auth")
     public class AuthController {
@@ -302,13 +303,7 @@ public class FileController {
 
             Integer departamentoDANE;
             Integer ciudadDANE;
-            // try {
-            //     departamentoDANE = Integer.parseInt(departamentoDANEValue); // Asumiendo que es un Integer
-            //     ciudadDANE = Integer.parseInt(ciudadDANEValue); // Asumiendo que es un Integer
-            // } catch (NumberFormatException e) {
-            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            //             .body("El código del departamento y el código de la ciudad deben ser numéricos.");
-            // }
+            
             try {
                 departamentoDANE = Integer.parseInt(departamentoDANEValue);
                 ciudadDANE = Integer.parseInt(ciudadDANEValue);
@@ -323,103 +318,68 @@ public class FileController {
                 String errorMessage = String.format("Error en la fila %d, columna 'Departamento DANE': El código del departamento no puede ser nulo o igual a 0.", rowIndex);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
             }
-            // if ("15".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_15.contains(ciudadDANEValue)) {
-            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            //             .body(String.format("El código de ciudad %s no es válido para el departamento 15.", ciudadDANEValue));
-            // } else if ("68".equals(departamentoDANEValue) && !CODES_DEPARTAMENTO_68.contains(ciudadDANEValue)) {
-            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            //             .body(String.format("El código de ciudad %s no es válido para el departamento 68.", ciudadDANEValue));
-            // }
+            
 
             // Consultar en la base de datos los datos asociados a la matrícula
             Optional<Cuenta> cuentaOptional = cuentaService.getCuentaPorMatricula(matricula);
             
-             if (cuentaOptional.isPresent()) {
-            Cuenta cuenta = cuentaOptional.get();
-            
 
             // Validar discrepancias
-            if (!cuenta.getDepartamento().equals(departamentoDANE) || !cuenta.getMunicipio().equals(ciudadDANE)) {
-                // Insertar registro en la tabla de auditoría
-            
-                
-
-                    if (!cuenta.getDepartamento().equals(departamentoDANE)) {
-                        // Registro para cambio en Departamento DANE
-                        Auditoria auditoriaDepartamento = new Auditoria();
-                        auditoriaDepartamento.setUsuario(usuarioLogueado);
-                        auditoriaDepartamento.setAccion(accion);
-                        auditoriaDepartamento.setCampoModificado("Departamento DANE");
-                        auditoriaDepartamento.setValorAnterior(departamentoDANEValue); // Valor original en archivo
-                        auditoriaDepartamento.setValorNuevo(String.valueOf(cuenta.getDepartamento())); // Nuevo valor en la base de datos
-                        auditoriaDepartamento.setFechaModificacion(LocalDateTime.now());
-                        System.out.println("-- Usuario --: " + usuarioLogueado);
-                        auditoriaRepository.save(auditoriaDepartamento);
-                    }
-                    
-                    if (!cuenta.getMunicipio().equals(ciudadDANE)) {
-                        // Registro para cambio en Ciudad DANE
-                        Auditoria auditoriaMunicipio = new Auditoria();
-                        auditoriaMunicipio.setUsuario(usuarioLogueado);
-                        auditoriaMunicipio.setAccion(accion);
-                        auditoriaMunicipio.setCampoModificado("Ciudad DANE");
-                        auditoriaMunicipio.setValorAnterior(ciudadDANEValue); // Valor original en archivo
-                        auditoriaMunicipio.setValorNuevo(String.valueOf(cuenta.getMunicipio()));
-                        auditoriaMunicipio.setFechaModificacion(LocalDateTime.now());
-                        System.out.println("-- Usuario --: " + usuarioLogueado);
-                        auditoriaRepository.save(auditoriaMunicipio);
-                    }
-                    
-                    // Si ninguno de los dos campos se modifica, puedes registrar un log informativo o simplemente omitir la auditoría.
-                    if (cuenta.getDepartamento().equals(departamentoDANE) && cuenta.getMunicipio().equals(ciudadDANE)) {
-                        log.info(String.format("No hubo cambios en Departamento (%s) ni Ciudad (%s) para la cuenta %s.",
-                                departamentoDANE, ciudadDANE, accountNumber));
-                    }
-                }
-            } else {
-                // Manejo de error si no se encuentra la cuenta
-                log.error(String.format("No se encontró información para la matrícula %s en la base de datos.", accountNumber));
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(String.format("No se encontró información para la matrícula %s en la base de datos.", accountNumber));
-            }
-
             if (cuentaOptional.isPresent()) {
                 Cuenta cuenta = cuentaOptional.get();
-
+            
+                boolean hasChanges = false; // Bandera para verificar si hubo cambios
+            
                 // Validar y corregir los datos de departamento y ciudad
-                if (!cuenta.getDepartamento().equals(departamentoDANE) || !cuenta.getMunicipio().equals(ciudadDANE)) {
-                    // Corregir los valores en rowData
+                if (!cuenta.getDepartamento().equals(departamentoDANE)) {
+                    // Registro para cambio en Departamento DANE
+                    Auditoria auditoriaDepartamento = new Auditoria();
+                    auditoriaDepartamento.setUsuario(usuarioLogueado);
+                    auditoriaDepartamento.setAccion(accion);
+                    auditoriaDepartamento.setCampoModificado("Departamento DANE");
+                    auditoriaDepartamento.setValorAnterior(departamentoDANEValue); // Valor original en archivo
+                    auditoriaDepartamento.setValorNuevo(String.valueOf(cuenta.getDepartamento())); // Nuevo valor en la base de datos
+                    auditoriaDepartamento.setFechaModificacion(LocalDateTime.now());
+                    auditoriaRepository.save(auditoriaDepartamento);
+            
+                    hasChanges = true; // Indicar que hubo un cambio
+                }
+            
+                if (!cuenta.getMunicipio().equals(ciudadDANE)) {
+                    // Registro para cambio en Ciudad DANE
+                    Auditoria auditoriaMunicipio = new Auditoria();
+                    auditoriaMunicipio.setUsuario(usuarioLogueado);
+                    auditoriaMunicipio.setAccion(accion);
+                    auditoriaMunicipio.setCampoModificado("Ciudad DANE");
+                    auditoriaMunicipio.setValorAnterior(ciudadDANEValue); // Valor original en archivo
+                    auditoriaMunicipio.setValorNuevo(String.valueOf(cuenta.getMunicipio()));
+                    auditoriaMunicipio.setFechaModificacion(LocalDateTime.now());
+                    auditoriaRepository.save(auditoriaMunicipio);
+            
+                    hasChanges = true; // Indicar que hubo un cambio
+                }
+            
+                // Solo corregir los datos en rowData si hubo cambios
+                if (hasChanges) {
                     rowData.put("daneDpto", String.valueOf(cuenta.getDepartamento()));
                     rowData.put("daneMpio", String.valueOf(cuenta.getMunicipio()));
-
+            
                     // Registrar un mensaje de advertencia en los logs
                     log.warn(String.format(
                             "Fila con número de cuenta %s: El Departamento DANE (%s) o Ciudad DANE (%s) eran incorrectos. Se corrigieron automáticamente a Departamento: %s, Municipio: %s.",
                             accountNumber, departamentoDANEValue, ciudadDANEValue, cuenta.getDepartamento(), cuenta.getMunicipio()));
+                } else {
+                    log.info(String.format("No hubo cambios en Departamento DANE (%s) ni Ciudad DANE (%s) para la cuenta %s.",
+                            departamentoDANE, ciudadDANE, accountNumber));
                 }
-                
+            
             } else {
                 // Si no se encuentra la matrícula en la base de datos, registrar un error
                 log.error(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(String.format("No se encontró información para la matrícula %s en la base de datos.", matricula));
             }
-
-            // // Validación de Grupo Causal y Detalle Causal
-            // try {
-            //     Integer detalleCausal = Integer.parseInt(detalleCausalStr);
-
-            //     if ("P".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_P.contains(detalleCausal)) {
-            //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            //                 .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
-            //     } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
-            //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            //                 .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
-            //     }
-            // } catch (NumberFormatException e) {
-            //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            //             .body("Error: El valor de Detalle Causal debe ser un número entero.");
-            // }
+        
 
             // Validación de Grupo Causal y Detalle Causal
             try {
@@ -436,8 +396,13 @@ public class FileController {
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
+                    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    //         .body("Error: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.");
+                    String errorMessage = String.format(
+                    "Error en la fila <b>%d</b>, columna <b>'Detalle Causal'</b>: Para el grupo causal 'P', el código de detalle causal debe ser uno de los siguientes: 303, 304, 305, 306.",
+                    rowIndex
+                    );
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
                 } else if ("F".equalsIgnoreCase(grupoCausal) && !CODIGOS_DETALLE_CAUSAL_F.contains(detalleCausal)) {
                     // Registro de auditoría
                     Auditoria auditoria = new Auditoria();
@@ -449,8 +414,14 @@ public class FileController {
                     auditoria.setFechaModificacion(LocalDateTime.now());
                     auditoriaRepository.save(auditoria);
 
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
+                    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    //         .body("Error: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.");
+                    
+                    String errorMessage = String.format(
+                    "Error en la fila <b>%d</b>, columna <b>'Detalle Causal'</b>: Para el grupo causal 'F', el código de detalle causal debe estar entre 101 y 124.",
+                    rowIndex
+                    );
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
                 }
             } catch (NumberFormatException e) {
 
