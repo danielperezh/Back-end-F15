@@ -43,7 +43,8 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        //config.addAllowedOrigin("http://formato15.ebsa.com.co:8080");
+        config.addAllowedOrigin("http://formato15.ebsa.com.co:8080");
+        config.addAllowedOrigin("https://formato15.ebsa.com.co:8082");
         config.addAllowedOrigin("http://localhost:8080");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");

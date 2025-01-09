@@ -73,9 +73,9 @@ public class Formato15Service {
 
 
     public List<Map<String, String>> readFileFromDirectory(String year, String month) throws IOException, CsvException {
-        // File directory = new File("//172.16.10.26/CREG Report Repository");
+        File directory = new File("//172.16.10.26/CREG Report Repository");
         // File directory = new File("C:/Users/dperez.EBSA0/Downloads/Formato15p");
-        File directory = new File("C:/Users/usuario/Downloads/Formatos pruebas/prueba");
+        //File directory = new File("C:/Users/usuario/Downloads/Formatos pruebas/prueba");
         
         // Filtrar archivos por año y mes en el nombre (formato esperado: formato_15_YYYYMM.ext)
         String filePattern = String.format("formato_15_%s%s", year, month);
