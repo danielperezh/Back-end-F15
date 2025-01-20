@@ -26,32 +26,34 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()) // Deshabilita CSRF para pruebas
-            .cors(cors -> cors.disable()) // O configura CORS adecuadamente
+        http.csrf(csrf -> csrf.disable()) // Deshabilita CSRF
+            .cors() // Habilita CORS
+            .and()
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/**").permitAll() // Endpoints públicos
-                .requestMatchers("/api/**").authenticated() // Requiere autenticación
-                .anyRequest().authenticated()
+                .anyRequest().authenticated() // Requiere autenticación para el resto
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);// Agrega el filtro JWT
-            
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Agrega el filtro JWT
 
         return http.build();
     }
+
 
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOrigin("http://formato15.ebsa.com.co:8080");
-        config.addAllowedOrigin("https://formato15.ebsa.com.co:8082");
-        config.addAllowedOrigin("http://localhost:8080");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        config.setAllowCredentials(true);
+        config.addAllowedOrigin("http://formato15.ebsa.com.co:8080"); // Origen HTTP
+        config.addAllowedOrigin("http://formato15.ebsa.com.co:8086"); // Origen HTTP
+        config.addAllowedOrigin("https://formato15.ebsa.com.co:8082"); // Origen HTTPS
+        config.addAllowedOrigin("http://localhost:8080"); // Desarrollo local
+        config.addAllowedHeader("*"); // Permite todos los encabezados
+        config.addAllowedMethod("*"); // Permite todos los métodos (GET, POST, etc.)
+        config.setAllowCredentials(true); // Permite cookies y credenciales
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) 
