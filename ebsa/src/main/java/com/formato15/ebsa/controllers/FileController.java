@@ -148,7 +148,7 @@ public class FileController {
     private CuentaService cuentaService;
     
 
-    @CrossOrigin(origins = {"http://formato15.ebsa.com.co:8080", "http://formato15.ebsa.com.co:8086", "https://formato15.ebsa.com.co:8082", "http://localhost:8080"})
+    @CrossOrigin(origins = {"http://formato15.ebsa.com.co:8080", "http://formato15.ebsa.com.co:8086", "http://formato15.ebsa.com.co", "http://localhost:8080"})
     @RestController
     @RequestMapping("/api/auth")
     public class AuthController {
