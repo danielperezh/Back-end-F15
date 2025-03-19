@@ -25,12 +25,6 @@ public class Auditoria {
     @Column(name = "usuario", nullable = false)
     private String usuario;
 
-    // @Column(name = "rol_usuario")
-    // private String rolUsuario;
-
-    @Column(name = "nombre_archivo")
-    private String nombreArchivo;
-
     @Column(name = "accion", nullable = false)
     private String accion;
 
@@ -45,6 +39,17 @@ public class Auditoria {
 
     @Column(name = "fecha_modificacion", nullable = false)
     private LocalDateTime fechaModificacion = LocalDateTime.now();
+
+    public Auditoria() {}
+
+    public Auditoria(String usuario, String accion, String campoModificado, String valorAnterior, String valorNuevo) {
+        this.usuario = usuario;
+        this.accion = accion;
+        this.campoModificado = campoModificado;
+        this.valorAnterior = valorAnterior;
+        this.valorNuevo = valorNuevo;
+        this.fechaModificacion = LocalDateTime.now();
+    }
 
     public String getUsuario() {
         return usuario;

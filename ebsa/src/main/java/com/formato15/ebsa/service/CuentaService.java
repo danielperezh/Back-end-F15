@@ -14,8 +14,13 @@ public class CuentaService {
     @Autowired
     private CuentaRepository cuentaRepository;
 
-    public Optional<Cuenta> getCuentaPorMatricula(Long matricula) {
-        return cuentaRepository.findByMatricula(matricula);
+    // public Optional<Cuenta> getCuentaPorMatricula(Long matricula) {
+    //     return cuentaRepository.findByMatricula(matricula);
+    // }
+
+    public Optional<Cuenta> getCuentaPorNumeroCompleto(Long matricula, Long digitosChequeo) {
+        return cuentaRepository.findByMatriculaAndDigitosChequeo(matricula, digitosChequeo);
     }
+    
 }
 

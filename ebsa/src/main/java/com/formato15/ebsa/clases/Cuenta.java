@@ -19,6 +19,9 @@ public class Cuenta {
     @Column(name = "municipio")
     private Integer ciudad;
 
+    @Column(name ="DIGITOS_CHEQUEO")
+    private Long digitosChequeo;
+
     public Integer getDepartamento() {
         return departamento;
     }
@@ -35,6 +38,13 @@ public class Cuenta {
         this.ciudad = ciudad;
     }
 
+    public Long getDigitosChequeo() {
+        return digitosChequeo;
+    }
+
+    public void setDigitosChequeo(Long digitosChequeo) {
+        this.digitosChequeo = digitosChequeo;
+    }
     
 
 }

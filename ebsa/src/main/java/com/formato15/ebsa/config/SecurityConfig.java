@@ -45,8 +45,10 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://formato15.ebsa.com.co:8080"); 
         config.addAllowedOrigin("http://formato15.ebsa.com.co:8086"); 
-        config.addAllowedOrigin("https://formato15.ebsa.com.co:8082"); 
+        config.addAllowedOrigin("https://formato15.ebsa.com.co:8086"); 
+        config.addAllowedOrigin("https://formato15.ebsa.com.co:8080"); 
         config.addAllowedOrigin("http://localhost:8080"); 
+        config.addAllowedOrigin("http://localhost:8086"); 
         config.addAllowedHeader("*"); 
         config.addAllowedMethod("*"); 
         config.setAllowCredentials(true); 
